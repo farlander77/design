@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html class="theme-dark" lang="zh-TW">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>號誌連線儀表版</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --color-page: #05192F; --color-surface: #131313; --color-surface-muted: #1e1e1e;
+      --color-card: #112640; --color-card-bright: #393939; --color-border: #1f2937;
+      --color-border-soft: #666666; --color-text: #fff; --color-text-muted: #9ca3af;
+      --color-text-soft: #d1d5db; --color-blue: #3569D6; --color-blue-hover: #2563eb;
+      --color-green: #00cad7; --color-yellow: #eca34e; --color-purple: #266EDB;
+      --radius-sm: 2px; --radius: 4px; --font-sans: "Hanken Grotesk", Arial, "Noto Sans TC", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+      background: var(--color-page); color: var(--color-text);
+      font-family: var(--font-sans); -webkit-font-smoothing: antialiased;
+    }
+    button, select, input { font: inherit; }
+    button { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--color-surface); }
+    ::-webkit-scrollbar-thumb { background: var(--color-card-bright); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
+
+    /* Loading overlay */
+    #loading-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: #131313; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+    }
+    #loading-overlay.hidden { display: none; }
+    .loading-spinner {
+      width: 40px; height: 40px; border: 3px solid #393939;
+      border-top-color: var(--color-blue); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: var(--color-text-muted); font-size: 13px; }
+      
+      .color-blue{ color: #266EDB !important;}
+      .color-green{ color: #00CAD7 !important;}
+      .color-yellow{ color: #ECA34E !important;}
+      .color-purple{ color: #9D65CF !important;}
+
+    .app-header {
+      height: 48px; flex-shrink: 0; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 16px; background: #05192F;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .app-title-group, .header-actions, .header-icon-group, .live-status,
+    .filter-title, .section-label, .legend-item, .metric-header,
+    .metric-value, .metric-row, .trend-indicator, .table-title, .status-cell {
+      display: flex; align-items: center;
+    }
+    .app-title-group { gap: 8px; }
+    .app-title { margin: 0; font-size: 18px; font-weight: 500; letter-spacing: .025em; }
+    .header-actions { gap: 16px; }
+    .header-icon-group { gap: 12px; color: var(--color-text-muted); }
+    .avatar { width: 24px; height: 24px; border-radius: 50%; background: #4b5563; }
+
+    /* 重新載入按鈕 */
+    .reload-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: var(--radius);
+      background: #283C59; color: var(--color-text-muted);
+      font-size: 12px; transition: background .18s, color .18s;
+    }
+    .reload-btn:hover { background: #4a4a4a; color: var(--color-text); }
+    .reload-btn.spinning i { animation: spin 0.8s linear infinite; }
+
+    .status-dot {
+      width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%;
+      background: var(--status-color, var(--color-text-muted));
+    }
+    .status-dot.is-live { animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite; }
+    .status-green { --status-color: var(--color-green); }
+    .status-red { --status-color: var(--color-yellow); }
+    .status-yellow { --status-color: var(--color-yellow); }
+    .status-gray { --status-color: #6b7280; }
+    .status-purple { --status-color: #9D65CF; }
+    @keyframes pulse { 50% { opacity: .45; } }
+
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px; padding: 8px 0px;
+    }
+    .metric-card { position: relative; padding: 16px; border-top: 4px solid var(--accent-color, #4b5563); background: var(--color-card); border-radius: 5px;  border-bottom: 1px solid #1F3754;border-left: 1px solid #1F3754;border-right: 1px solid #1F3754;}
+    .metric-blue { --accent-color: var(--color-purple); }
+    .metric-green { --accent-color: var(--color-green); }
+    .metric-yellow { --accent-color: var(--color-yellow); }
+    .metric-header { justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .metric-title { margin: 0; color: var(--color-text-soft); font-size: 14px; font-weight: 600; text-transform: uppercase; }
+    .metric-row { justify-content: space-between; align-items: baseline; }
+    .metric-value { align-items: baseline; gap: 4px; }
+    .metric-number { font-size: 30px; font-weight: 700; line-height: 1; }
+    .metric-unit, .summary-unit { margin-left: 4px; color: var(--color-text-muted); font-size: 12px; }
+    .trend-indicator { font-size: 12px; gap: 5px; }
+    .trend-positive { color: #32CB33; }
+    .trend-warning { color: #FE3263; }
+
+    .dashboard-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0px 8px 8px 8px; }
+      
+      
+      @media(min-width:768px){
+        .sidebar {
+          width: calc(25% - 5px); flex-shrink: 0; display: flex; flex-direction: column;overflow: auto;scrollbar-width: thin; scrollbar-color: #888888 #393939; gap: 8px; padding: 8px 0 8px 8px;
+        }
+      }
+      
+      @media(max-width:767px){
+        .sidebar {
+          flex-shrink: 0; display: flex; flex-direction: column;overflow: auto;scrollbar-width: thin; scrollbar-color: #888888 #393939; gap: 8px; padding: 8px 0 8px 8px;
+          position: absolute; width: 300px; height: 100dvh; padding: 8px; background: #05192F; z-index: 1111; box-shadow: 5px 0 10px rgba(0,0,0,.5);
+        }
+      }
+    .filter-panel { padding: 16px; background: #112640; border: 1px solid #1F3754; border-radius: 5px; }
+    .filter-panel > * + * { margin-top: 24px; }
+    .filter-title { justify-content: space-between; border-bottom: 1px solid #666; padding-bottom: 10px; }
+    .filter-title h2 { margin: 0; font-size: 14px; font-weight: 600; }
+    .filter-section { margin-top: 10px; gap: 5px; }
+    .section-label { gap: 8px; margin-bottom: 8px; color: var(--color-text-soft); font-size: 12px; }
+    .checkbox-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 8px; }
+    .checkbox-option { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+    .checkbox-option input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none; width: 14px; height: 14px; margin: 0;
+      flex-shrink: 0; background: transparent; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;
+    }
+    .checkbox-option input[type="checkbox"]:checked { background: #3569D6; border-color: #3569D6; }
+    .checkbox-option input[type="checkbox"]:checked::after {
+      content: ""; display: block; width: 6px; height: 10px; margin: -1px 0 0 3px;
+      border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+    }
+    .field-select {
+      width: 100%; min-height: 34px; padding: 8px; border: 1px solid #888;
+      border-radius: var(--radius); background: var(--color-card);
+      color: var(--color-text-muted); font-size: 12px; outline: none; margin-bottom: 5px;
+    }
+    .field-select:focus { border-color: var(--color-blue); }
+    .filter-footer { display: flex; gap: 8px; padding-top: 20px; }
+    .button { flex: 1; min-height: 32px; border-radius: var(--radius); color: var(--color-text); font-size: 12px; transition: background .18s ease; }
+    .button-primary { background: var(--color-blue); }
+    .button-primary:hover { background: var(--color-blue-hover); }
+    .button-secondary { background: #6b7280; }
+    .button-secondary:hover { background: #4b5563; }
+
+    .summary-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #112640;  border: 1px solid #1F3754; border-left: 5px solid #9d65cf; border-radius: 5px; }
+    .summary-label { font-size: 14px; font-weight: 500; }
+    .summary-value { text-align: right; }
+    .summary-number { font-size: 24px; font-weight: 700; }
+
+    .chart-panel {
+      position: relative; min-height: 220px; flex: 1; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 16px; border: 1px solid #1F3754; background: #112640; border-radius: 5px;
+    }
+    .donut-chart { position: relative; width: 144px; height: 144px; }
+    .donut-chart svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .donut-label { color: var(--color-text-muted); font-size: 10px; }
+    .donut-value { font-size: 20px; font-weight: 700; }
+    .chart-legend { display: flex; gap: 16px; margin-top: 24px; }
+    .chart-legend .legend-item { gap: 6px; font-size: 10px; }
+
+    .main-content { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .map-section { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #e5e7eb; }
+    .map-legend {
+      position: absolute; right: 5px; bottom: 10px; display: flex; gap: 16px;
+      padding: 8px 16px; border-radius: 999px; background: var(--color-surface-muted);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0/10%), 0 4px 6px -4px rgb(0 0 0/10%); z-index: 999;
+    }
+    .map-legend .legend-item { gap: 4px; font-size: 12px; }
+    .legend-dot { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%; background: var(--status-color, var(--color-text-muted)); }
+
+    .table-section { width: 100%; min-height: 0; overflow: hidden; z-index: 999; }
+    .table-title { gap: 4px; padding: 10px; background: #112640; display: flex; justify-content: space-between; align-items: center; }
+    .table-title-text { font-size: 14px; font-weight: 600; }
+    .table-card { max-height: 30vh; overflow: auto; background: var(--color-surface-muted); }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    .data-table thead { position: sticky; top: 0; z-index: 10; background: #101f2f; }
+    .data-table th { padding: 12px 16px; border-bottom: 1px solid var(--color-border-soft); color: var(--color-text-muted); font-weight: 500; }
+    .data-table td { padding: 12px 16px; border-bottom: 1px solid #1F3754; background: #0D2A4E; }
+    .data-table tbody tr {  cursor: pointer; }
+    .data-table tbody tr:hover { background: rgba(17 ,38,64,0.5); }
+    .status-cell { gap: 8px; }
+    .icon { width: 16px; height: 16px; display: block; }
+
+    /* 錯誤提示 */
+    .error-banner {
+      display: none; align-items: center; gap: 8px; padding: 8px 16px;
+      background: #3a1a1a; border-bottom: 1px solid #7a2020;
+      color: #ff8080; font-size: 12px;
+    }
+    .error-banner.visible { display: flex; }
+    #cb-audio-map:checked, #mcb-audio:checked { background: #9D65CF; border-color: #9D65CF; }
+    #cb-audio-map:checked::after, #mcb-audio:checked::after {
+      content: ""; display: block; width: 7px; height: 11px; margin: -2px 0 0 3px;
+      border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+    }
+
+    /* ===== 分頁列 ===== */
+    .dataTables_paginate {
+      display: flex; align-items: center; justify-content: center;
+      gap: 4px; padding: 8px 12px;
+      background: #0a1e35; border-top: 1px solid #1F3754;
+      flex-shrink: 0;
+    }
+    .paginate_button {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 28px; height: 28px; padding: 0 6px;
+      border-radius: var(--radius); font-size: 12px;
+      color: var(--color-text-muted); cursor: pointer;
+      transition: background .15s, color .15s;
+      user-select: none;
+    }
+    .paginate_button:hover:not(.disabled) {
+      background: #1F3754; color: var(--color-text);
+    }
+    .paginate_button.current {
+      background: var(--color-blue); color: #fff; font-weight: 600;
+    }
+    .paginate_button.disabled {
+      opacity: 0.3; cursor: default; pointer-events: none;
+    }
+    .ellipsis {
+      color: var(--color-text-muted); font-size: 12px; padding: 0 2px; line-height: 28px;
+    }
+
+    /* ===== Metric card checkbox ===== */
+    .metric-cb {
+      appearance: none; -webkit-appearance: none;
+      width: 16px; height: 16px; flex-shrink: 0;
+      background: transparent; border: 1px solid #ccc; border-radius: 3px;
+      cursor: pointer; transition: background .15s, border-color .15s;
+    }
+    .metric-cb:checked { background: var(--cb-color, #3569D6); border-color: var(--cb-color, #3569D6); }
+    .metric-cb:checked::after {
+      content: ""; display: block; width: 7px; height: 11px; margin: -2px 0 0 3px;
+      border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+    }
+    .metric-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .metric-card-label { display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%; }
+
+    /* ===== 篩選條件摘要列 ===== */
+    .filter-summary {
+      display: none; align-items: center; gap: 6px; flex-wrap: nowrap;
+      padding:8px 0 0 0; background: #0a1e35; font-size: 12px;
+      overflow: hidden;
+    }
+    .filter-summary.visible { display: flex; }
+    .filter-summary-label { color: #7a9cc0; font-weight: 600; flex-shrink: 0;  padding: 2px 10px; background: #1a3a5c;
+      border: 1px solid #266EDB; border-radius: 4px; }
+    #fs-content { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .filter-summary-item {
+      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+      padding: 2px 10px; background: #1a3a5c;
+      border: 1px solid #266EDB; border-radius: 4px; color: #fff; white-space: nowrap;
+    }
+    .filter-summary-sep { color: #fff; flex-shrink: 0; }
+
+    /* ===== Table Tab 切換 ===== */
+    .table-tabs { display: flex; gap: 0; }
+    .table-tab {
+      padding: 4px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+      color: var(--color-text-muted); background: transparent;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+      user-select: none;
+      position: relative;
+    }
+    .table-tab:hover { color: var(--color-text); }
+    .table-tab.active { color: #fff;}
+    .table-tab.active::after { content: ""; width: 100%; height: 4px; background: #266EDB; position: absolute; bottom: -10px; left: 0px; }
+    .table-tab.hidden { display: none; }
+      
+     #tab-audio.active::after {background: #266EDB;}
+     #tab-audio.active::after {background: #9D65CF;}
+      
+     .fa-chevron-down {transition: transform .3s;}
+     .fa-chevron-down.rotate {transform: rotate(180deg);}    
+
+    /* ===== 縣市叢集 ===== */
+    .city-cluster-wrap { transition: z-index 0s; }
+    .city-cluster-wrap:hover { z-index: 9999 !important; }
+
+    .city-cluster {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.75); border: 5px solid #266EDB; border-radius: 50%;
+      width: 80px; height: 80px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25); color: #1a1a1a;
+      cursor: pointer; transition: transform .15s;
+    }
+    .city-cluster:hover { transform: scale(1.08); }
+    .city-cluster .cc-name { font-size: 11px; font-weight: 700; color: #266EDB; line-height: 1.2; text-align: center; }
+    .city-cluster .cc-count { font-size: 18px; font-weight: 800; color: #1a1a1a; line-height: 1.2; }
+      
+      
+    .leftmenu-toggle-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: var(--radius);
+      background: #283C59; color: var(--color-text-muted);
+      font-size: 12px; transition: background .18s, color .18s;
+        position: absolute; top: 194px; left: 10px; width: 30px; height: 30px; z-index: 9999;
+    }
+    .lefmenu-toggle-btn:hover { background: #4a4a4a; color: var(--color-text); }
+
+    /* ===== Sidebar 收合動畫 ===== */
+    .sidebar {
+      transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+      overflow: hidden !important;
+    }
+    .sidebar.collapsed {
+      width: 0 !important;
+      min-width: 0 !important;
+      padding: 0 !important;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .leftmenu-toggle-btn {
+      transition: opacity 0.3s ease;
+    }
+    .leftmenu-toggle-btn.visible {
+      display: flex !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 讀取中遮罩 -->
+  <div id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loading-text">正在讀取 Excel 資料…</div>
+  </div>
+
+  <!-- 錯誤提示列 -->
+  <div class="error-banner" id="error-banner">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span id="error-msg"></span>
+  </div>
+
+  <header class="app-header">
+    <div class="app-title-group">
+      <h1 class="app-title">號誌連線儀表板</h1>
+    </div>
+    <div class="header-actions">
+      <!-- 最後更新時間 -->
+      <span style="color:var(--color-text-muted);font-size:11px;" id="last-updated"></span>
+      <!-- 重新載入按鈕 -->
+      <button class="reload-btn" id="btn-reload" title="重新讀取 Excel">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+    </div>
+  </header>
+
+  <div style="display: flex; flex-direction: row; height: 100%; ">
+      
+  <button class="leftmenu-toggle-btn" style="display: none;"><i class="fas fa-chevron-right"></i></button>
+      
+  <aside class="sidebar">
+      <div class="filter-panel">
+        <div class="filter-title">
+          <h2>篩選條件</h2>
+          <div class="leftmenu-hide"><i class="fas fa-chevron-left"></i></div>
+        </div>
+        <!-- 連線狀態篩選移至右上 metric cards -->
+        <!-- 保留隱藏 checkbox 供 JS 讀取 -->
+        <input type="checkbox" id="cb-connected" style="display:none;">
+        <input type="checkbox" id="cb-not" style="display:none;">
+        <input type="checkbox" id="cb-audio" style="display:none;">
+          
+        <div class="filter-section">
+          <div class="section-label">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="4" stroke-width="2"/>
+              <path d="M12 2v2M12 20v2M2 12h2M20 12h2" stroke-linecap="round" stroke-width="2"/>
+            </svg>
+            <span>年份</span>
+          </div>
+          <select class="field-select" id="sel-year">
+              <option value="115">115年</option>
+            </select>
+        </div>
+          
+        <div class="filter-section">
+          <div class="section-label">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+              <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+            </svg>
+            號誌位置
+          </div>
+          <select class="field-select" id="sel-city"><option value="">請選擇縣市</option></select>
+          <select class="field-select" id="sel-district"><option value="">請選擇行政區</option></select>
+          <div id="road-input-wrap" style="display:none; margin-top:6px;">
+            <div class="section-label" style="margin-bottom:6px;">
+              <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+              </svg>
+              <span>路名（選填）</span>
+            </div>
+            <input type="text" class="field-select" id="inp-road" placeholder="輸入路名，例如：中正路" style="height:34px;" autocomplete="off"/>
+          </div>
+        </div>
+        <div class="filter-footer">
+          <button class="button button-primary" id="btn-search" type="button">搜尋</button>
+          <button class="button button-secondary" id="btn-reset" type="button">清除</button>
+        </div>
+      </div>
+
+      <div class="summary-row">
+        <label class="summary-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="checkbox" id="mcb-audio"
+            style="appearance:none;-webkit-appearance:none;width:16px;height:16px;flex-shrink:0;
+                   background:transparent;border:1px solid #ccc;border-radius:3px;cursor:pointer;">
+          <span class="color-purple">有聲號誌</span>
+        </label>
+        <div class="summary-value">
+          <span class="summary-number" id="sidebar-audio-count">—</span>
+          <span class="metric-unit">座</span>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="donut-chart">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" fill="transparent" r="40" stroke="#eca34e" stroke-width="12"/>
+            <circle id="donut-arc" cx="50" cy="50" fill="transparent" r="40" stroke="#00cad7" stroke-dasharray="0 251.3" stroke-width="12"/>
+          </svg>
+          <div class="donut-center">
+            <span class="donut-label">連線率</span>
+            <span class="donut-value" id="donut-rate">—</span>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><span class="status-dot status-green"></span>已連線 <span id="legend-rate">—</span></div>
+          <div class="legend-item"><span class="status-dot status-red"></span>未連線 <span id="legend-not-rate">—</span></div>
+        </div>
+      </div>
+    </aside>
+  
+
+  <div class="dashboard-layout">
+      
+    <!-- 篩選條件摘要列 -->
+    <div class="filter-summary" id="filter-summary">
+      <span class="filter-summary-label">篩選條件</span><span>：</span>
+      <span id="fs-content"></span>
+    </div>
+      
+    <div class="metrics-grid">
+    <div class="metric-card metric-blue">
+      <div class="metric-header-row">
+        <label class="metric-card-label" for="mcb-all">
+          <input type="checkbox" class="metric-cb" id="mcb-all" style="--cb-color:#266EDB;" checked>
+          <h3 class="metric-title color-blue" style="margin:0;">號誌總數</h3>
+        </label>
+      </div>
+      <div class="metric-value">
+        <span class="metric-number" id="stat-total">—</span>
+        <span class="metric-unit">座</span>
+      </div>
+    </div>
+    <div class="metric-card metric-green">
+      <div class="metric-header-row">
+        <label class="metric-card-label" for="mcb-connected">
+          <input type="checkbox" class="metric-cb" id="mcb-connected" style="--cb-color:#00CAD7;">
+          <h3 class="metric-title color-green" style="margin:0;">已連線</h3>
+        </label>
+      </div>
+      <div class="metric-row">
+        <div class="metric-value">
+          <span class="metric-number" id="stat-connected">—</span>
+          <span class="metric-unit">座</span>
+        </div>
+        <div class="trend-indicator" id="stat-rate-badge" style="color:var(--color-text-muted);">--</div>
+      </div>
+    </div>
+    <div class="metric-card metric-yellow">
+      <div class="metric-header-row">
+        <label class="metric-card-label" for="mcb-not">
+          <input type="checkbox" class="metric-cb" id="mcb-not" style="--cb-color:#ECA34E;">
+          <h3 class="metric-title color-yellow" style="margin:0;">未連線</h3>
+        </label>
+      </div>
+      <div class="metric-row">
+        <div class="metric-value">
+          <span class="metric-number" id="stat-not-connected">—</span>
+          <span class="metric-unit">座</span>
+        </div>
+        <div class="trend-indicator" id="stat-rate-badge" style="color:var(--color-text-muted);">--</div>
+      </div>
+    </div>
+
+  </div>
+
+
+
+    <main class="main-content">
+      <div id="map" class="map-section">
+        <div class="map-legend">
+          <div class="legend-item"><span class="legend-dot status-green"></span>已連線</div>
+          <div class="legend-item"><span class="legend-dot status-red"></span>未連線</div>
+          <div class="legend-item"><span class="legend-dot status-purple"></span>有聲號誌</div>
+        </div>
+      </div>
+
+      <div class="table-section">
+        <div class="table-title">
+          <div class="table-tabs">
+            <span class="table-tab active" id="tab-signal">號誌清單</span>
+            <span class="table-tab hidden" id="tab-audio">有聲號誌</span>
+          </div>
+          <i class="fas fa-chevron-down table-toggle" style="cursor:pointer;padding:4px 8px;"></i>
+        </div>
+        <div id="table-collapsible">
+          <div class="table-card" id="table-card">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>號誌ID</th>
+                  <th>縣市</th>
+                  <th>行政區</th>
+                  <th>號誌位置</th>
+                  <th>連線狀態</th>
+                  <th>座標</th>
+
+                </tr>
+              </thead>
+              <tbody id="signal-table-body"></tbody>
+            </table>
+          </div>
+          <div class="dataTables_paginate" id="pagination"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+  </div>
+  <!-- ===== 外部函式庫 ===== -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- SheetJS：在瀏覽器直接讀取 .xlsx -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+  <script>
+  // ============================================================
+  //  設定：Excel 檔名（和 index.html 放在同一個資料夾）
+  // ============================================================
+  const FILE_SIGNAL   = '115年號誌連線清單.xlsx';   // 號誌連線清單
+  const FILE_AUDIO    = '115年有聲號誌清單.xlsx';        // 有聲號誌
+
+  // ============================================================
+  //  全域狀態
+  // ============================================================
+  let SIGNALS = [];        // 號誌連線清單（所有工作表合併）
+  let AUDIO_SIGNALS = [];  // 有聲號誌
+  let selectedMarker = null; // 目前放大/選取中的 marker
+  let currentFiltered = [];
+  let tablePage = 0;
+  let _activeTab = 'signal';   // 'signal' or 'audio'
+  let _cachedAudio = [];       // 有聲號誌快取（供 tab 切換用）
+  let _cachedSignal = [];      // 號誌清單快取
+  const PAGE_SIZE = 10;
+
+  // ============================================================
+  //  地圖
+  // ============================================================
+  const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([23.9, 121.0], 8);
+  L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
+    minZoom: 6, maxZoom: 19
+  }).addTo(map);
+  // 個別 marker 圖層（zoom >= 14 時顯示）
+  const layerGroup = L.layerGroup();
+  const audioLayerGroup = L.layerGroup();
+
+  // 縣市叢集圖層（zoom < 10 時顯示）
+  const clusterLayer = L.layerGroup().addTo(map);
+
+  // 行政區叢集圖層（zoom 10~13 時顯示）
+  const districtClusterLayer = L.layerGroup();
+
+  // 依 zoom 切換三層
+  let _lastData = [], _lastAudio = [], _lastShowAudio = true;
+  let _statsData = []; // 統計用完整資料（不含 mcb 過濾）
+  function updateZoomLayers() {
+    const z = map.getZoom();
+    if (z >= 14) {
+      // 個別 marker
+      map.removeLayer(clusterLayer);
+      map.removeLayer(districtClusterLayer);
+      map.addLayer(layerGroup);
+      map.addLayer(audioLayerGroup);
+    } else if (z >= 10) {
+      // 行政區叢集
+      map.removeLayer(clusterLayer);
+      map.removeLayer(layerGroup);
+      map.removeLayer(audioLayerGroup);
+      map.addLayer(districtClusterLayer);
+    } else {
+      // 縣市叢集
+      map.removeLayer(districtClusterLayer);
+      map.removeLayer(layerGroup);
+      map.removeLayer(audioLayerGroup);
+      map.addLayer(clusterLayer);
+
+    }
+  }
+  map.on('zoomend', updateZoomLayers);
+
+  // ============================================================
+  //  工具函式
+  // ============================================================
+  function showLoading(msg) {
+    document.getElementById('loading-text').textContent = msg || '正在讀取 Excel 資料…';
+    document.getElementById('loading-overlay').classList.remove('hidden');
+  }
+  function hideLoading() {
+    document.getElementById('loading-overlay').classList.add('hidden');
+  }
+  function showError(msg) {
+    const b = document.getElementById('error-banner');
+    document.getElementById('error-msg').textContent = msg;
+    b.classList.add('visible');
+  }
+  function hideError() {
+    document.getElementById('error-banner').classList.remove('visible');
+  }
+
+  // 智慧判斷緯度/經度（台灣：lat ≈ 22-26, lng ≈ 119-122）
+  function fixLatLng(a, b) {
+    const fa = parseFloat(a), fb = parseFloat(b);
+    if (isNaN(fa) || isNaN(fb)) return { lat: null, lng: null };
+    if (fa > 100) return { lat: fb, lng: fa };  // a 是經度，b 是緯度
+    return { lat: fa, lng: fb };
+  }
+
+  function findCol(headers, candidates) {
+    for (const c of candidates) {
+      const i = headers.findIndex(h => h && String(h).includes(c));
+      if (i >= 0) return i;
+    }
+    return -1;
+  }
+
+  function cellVal(row, idx) {
+    if (idx < 0 || idx >= row.length) return '';
+    const v = row[idx];
+    return v == null ? '' : String(v).trim();
+  }
+
+  // ============================================================
+  //  讀取 Excel（fetch + SheetJS）
+  // ============================================================
+  async function fetchWorkbook(filename) {
+    // 加上時間戳避免瀏覽器快取舊版 Excel
+    const res = await fetch(filename + '?t=' + Date.now());
+    if (!res.ok) throw new Error(`無法讀取 ${filename}（HTTP ${res.status}）`);
+    const buf = await res.arrayBuffer();
+    return XLSX.read(buf, { type: 'array' });
+  }
+
+  // 解析「號誌連線清單」
+  function parseSignalWB(wb) {
+    const result = [];
+    for (const shName of wb.SheetNames) {
+      if (!shName.startsWith('清冊(')) continue;
+      const city = shName.replace('清冊(', '').replace(')', '');
+      const ws = wb.Sheets[shName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      if (rows.length < 2) continue;
+
+      // 找標頭列（跳過注意事項列）
+      let hdrIdx = -1;
+      for (let i = 0; i < Math.min(rows.length, 4); i++) {
+        if (rows[i].some(c => String(c).includes('號誌編號'))) { hdrIdx = i; break; }
+      }
+      if (hdrIdx < 0) continue;
+      const headers = rows[hdrIdx].map(c => String(c).trim());
+
+      const idCol   = findCol(headers, ['號誌編號', '設備編號', '編號']);
+      const locCol  = findCol(headers, ['號誌設置位置', '設置位置']);
+      const distCol = findCol(headers, ['行政區']);
+      const latCol  = findCol(headers, ['緯度']);
+      const lngCol  = findCol(headers, ['經度']);
+      const commCol = findCol(headers, ['通訊模組']);
+
+      for (let r = hdrIdx + 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row.some(c => c !== '')) continue;
+        const id = cellVal(row, idCol);
+        if (!id || id.startsWith('**')) continue;
+
+        const { lat, lng } = fixLatLng(cellVal(row, latCol), cellVal(row, lngCol));
+        result.push({
+          city,
+          id,
+          location: cellVal(row, locCol),
+          district: cellVal(row, distCol),
+          lat,
+          lng,
+          connected: cellVal(row, commCol)   // '有' or '無' or ''
+        });
+      }
+    }
+    return result;
+  }
+
+  // 解析「有聲號誌」
+  function parseAudioWB(wb) {
+    const result = [];
+    for (const shName of wb.SheetNames) {
+      if (shName === '設備總表') continue;
+      const ws = wb.Sheets[shName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      if (rows.length < 2) continue;
+      const headers = rows[0].map(c => String(c).trim());
+
+      const idCol   = findCol(headers, ['設備編號', '編號']);
+      const cityCol = findCol(headers, ['縣市']);
+      const distCol = findCol(headers, ['鄉政市區', '鄉鎮市區']);
+      const r1Col   = findCol(headers, ['道路1']);
+      const r2Col   = findCol(headers, ['道路2']);
+      const latCol  = findCol(headers, ['緯度']);
+      const lngCol  = findCol(headers, ['經度']);
+      const actCol  = findCol(headers, ['啟動方式']);
+
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row.some(c => c !== '')) continue;
+        const id = cellVal(row, idCol);
+        if (!id) continue;
+
+        const { lat, lng } = fixLatLng(cellVal(row, latCol), cellVal(row, lngCol));
+        if (!lat || !lng) continue;
+
+        const loc = [cellVal(row, r1Col), cellVal(row, r2Col)].filter(Boolean).join(' ');
+        result.push({
+          city: cellVal(row, cityCol) || shName,
+          id, district: cellVal(row, distCol), location: loc,
+          lat, lng, activation: cellVal(row, actCol)
+        });
+      }
+    }
+    return result;
+  }
+
+  // ============================================================
+  //  主要載入流程
+  // ============================================================
+  async function loadData() {
+    hideError();
+    showLoading('正在讀取號誌連線清單…');
+
+    try {
+      const [wbSignal, wbAudio] = await Promise.all([
+        fetchWorkbook(FILE_SIGNAL),
+        fetchWorkbook(FILE_AUDIO)
+      ]);
+
+      showLoading('正在解析資料…');
+      SIGNALS = parseSignalWB(wbSignal);
+      AUDIO_SIGNALS = parseAudioWB(wbAudio);
+
+      // 建立有聲號誌座標集合
+
+      // 更新最後載入時間
+      document.getElementById('last-updated').textContent =
+        '資料更新：' + new Date().toLocaleTimeString('zh-TW');
+
+      initCityFilter();
+      applyFilter();
+      hideLoading();
+
+    } catch (err) {
+      hideLoading();
+      showError('⚠ ' + err.message + '　請確認 Excel 檔案與 index.html 放在同一個資料夾，並使用本機伺服器開啟（非直接雙擊 HTML）。');
+      console.error(err);
+    }
+  }
+
+  // ============================================================
+  //  地圖渲染
+  // ============================================================
+// marker 的預設樣式
+  function markerStyle(fillColor, isAudioType) {
+    return { radius: isAudioType ? 6 : 5, fillColor, color: '#fff', weight: 1.5, opacity: 0.95, fillOpacity: 0.9 };
+  }
+  // 放大 + 黑框 (選取) 樣式
+  function selectedStyle(fillColor, isAudioType) {
+    return { radius: isAudioType ? 10 : 9, fillColor, color: '#000', weight: 2.5, opacity: 1, fillOpacity: 1 };
+  }
+
+  function selectMarker(marker, fillColor, isAudioType, popupContent) {
+    // 還原上一個選取的 marker
+    if (selectedMarker && selectedMarker !== marker) {
+      const prev = selectedMarker;
+      prev.setStyle(markerStyle(prev._origColor, prev._isAudio));
+      prev.setRadius(prev._isAudio ? 6 : 5);
+    }
+    // 放大並加黑框，移到最上層
+    marker.setStyle(selectedStyle(fillColor, isAudioType));
+    marker.setRadius(isAudioType ? 10 : 9);
+    marker.bringToFront();
+    marker.openPopup();
+    selectedMarker = marker;
+    selectedMarker._origColor = fillColor;
+    selectedMarker._isAudio = isAudioType;
+  }
+
+  // 點地圖空白處取消選取
+  map.on('click', function () {
+    if (selectedMarker) {
+      selectedMarker.setStyle(markerStyle(selectedMarker._origColor, selectedMarker._isAudio));
+      selectedMarker.setRadius(selectedMarker._isAudio ? 6 : 5);
+      selectedMarker.closePopup();
+      selectedMarker = null;
+    }
+  });
+
+  // marker key → marker 物件的查詢表（供表格列點擊使用）
+  const markerIndex = new Map();
+
+  // showAudio: 是否在地圖上顯示有聲號誌圖示（由 cb-audio-map 控制）
+  // filteredAudioList: 已篩選完的有聲號誌清單（由 applyFilter 傳入）
+  function renderMap(data, filteredAudioList, showAudio, statsData) {
+    _lastData = data; _lastAudio = filteredAudioList; _lastShowAudio = showAudio;
+    layerGroup.clearLayers();
+    audioLayerGroup.clearLayers();
+    clusterLayer.clearLayers();
+    markerIndex.clear();
+    selectedMarker = null;
+    const seenKeys = new Set();
+
+    function addMarker(latlng, fillColor, isAudioType, popupHtml, key) {
+      const m = L.circleMarker(latlng, markerStyle(fillColor, isAudioType))
+        .bindPopup(popupHtml, { maxWidth: 220 });
+      m._origColor = fillColor;
+      m._isAudio = isAudioType;
+      m.on('click', function (e) {
+        L.DomEvent.stopPropagation(e);
+        selectMarker(this, fillColor, isAudioType, popupHtml);
+      });
+      m.addTo(isAudioType ? audioLayerGroup : layerGroup);
+      if (key) markerIndex.set(key, m);
+      return m;
+    }
+
+    // 號誌清單 marker（完全獨立，不與有聲號誌關聯）
+    data.filter(s => s.lat && s.lng).forEach(sig => {
+      const key = parseFloat(sig.lat).toFixed(4) + ',' + parseFloat(sig.lng).toFixed(4);
+      const color = sig.connected === '有' ? '#00cad7' : '#eca34e';
+      const popup = `<b>${sig.id}</b><br>${sig.city} ${sig.district}<br>${sig.location}<br>` +
+        `狀態：${sig.connected === '有' ? '✅ 已連線' : '❌ 未連線'}`;
+      addMarker([sig.lat, sig.lng], color, false, popup, key);
+    });
+
+    // 有聲號誌 marker（完全獨立圖層，不影響號誌清單）
+    if (showAudio) {
+      filteredAudioList.forEach(a => {
+        if (!a.lat || !a.lng) return;
+        const key = parseFloat(a.lat).toFixed(4) + ',' + parseFloat(a.lng).toFixed(4);
+        const popup = `<b>${a.id}</b><br>${a.city} ${a.district}<br>${a.location}<br>🔊 有聲號誌<br>啟動：${a.activation}`;
+        addMarker([a.lat, a.lng], '#a778d1', true, popup, key);
+      });
+    }
+
+    // ── 叢集統計由外部 statsData 傳入，保持與號誌總數一致 ──
+    renderCluster(filteredAudioList, showAudio);
+    renderDistrictCluster(filteredAudioList, showAudio);
+
+    updateZoomLayers();
+  }
+
+  // ============================================================
+  //  叢集渲染（用 statsData 統計，與號誌總數一致）
+  // ============================================================
+  const CITY_CENTERS = {
+    '基隆市': [25.128, 121.740], '臺北市': [25.033, 121.565], '新北市': [25.012, 121.466],
+    '桃園市': [24.993, 121.301], '新竹市': [24.803, 120.971], '新竹縣': [24.702, 121.122],
+    '苗栗縣': [24.560, 120.821], '臺中市': [24.147, 120.674], '彰化縣': [24.052, 120.516],
+    '南投縣': [23.960, 120.972], '雲林縣': [23.712, 120.431], '嘉義市': [23.480, 120.449],
+    '嘉義縣': [23.459, 120.574], '臺南市': [23.000, 120.211], '高雄市': [22.627, 120.301],
+    '屏東縣': [22.552, 120.548], '宜蘭縣': [24.702, 121.737], '花蓮縣': [23.700, 121.601],
+    '臺東縣': [22.798, 121.071], '澎湖縣': [23.565, 119.579], '金門縣': [24.432, 118.317],
+    '連江縣': [26.152, 119.949]
+  };
+
+  function renderCluster(filteredAudioList, showAudio) {
+    clusterLayer.clearLayers();
+
+    const mcbAll   = document.getElementById('mcb-all').checked;
+    const mcbConn  = document.getElementById('mcb-connected').checked;
+    const mcbNot   = document.getElementById('mcb-not').checked;
+    const mcbAudio = document.getElementById('mcb-audio').checked; // sidebar checkbox
+    const base = _statsData || [];
+
+    // 依 mcb 決定叢集來源與計算
+    const cityStats = {};
+
+    // ── 號誌清單縣市叢集（靠左）──
+    let signalColor = '#266EDB';
+    let signalClusterData;
+    if (mcbConn) { signalClusterData = base.filter(s => s.connected === '有'); signalColor = '#00CAD7'; }
+    else if (mcbNot) { signalClusterData = base.filter(s => s.connected !== '有'); signalColor = '#ECA34E'; }
+    else signalClusterData = base;
+
+    const signalStats = {};
+    signalClusterData.filter(s => s.lat && s.lng && s.city).forEach(sig => {
+      if (!signalStats[sig.city]) signalStats[sig.city] = 0;
+      signalStats[sig.city]++;
+    });
+
+    Object.entries(signalStats).forEach(([city, count]) => {
+      const center = CITY_CENTERS[city];
+      if (!center || count === 0) return;
+      const html = `<div class="city-cluster" style="border-color:${signalColor};"><div class="cc-name" style="color:${signalColor};">${city}</div><div class="cc-count">${count}</div></div>`;
+      const icon = L.divIcon({ html, className: '', iconAnchor: [55, 40] }); // 靠右錨點→泡泡在左
+      L.marker(center, { icon })
+        .on('click', () => map.setView(center, 11))
+        .on('mouseover', function() { this.getElement().style.zIndex = 9999; })
+        .on('mouseout',  function() { this.getElement().style.zIndex = ''; })
+        .addTo(clusterLayer);
+    });
+
+    // ── 有聲號誌縣市叢集（靠右，與號誌叢集並排）──
+    if (mcbAudio) {
+      const audioStats = {};
+      filteredAudioList.filter(a => a.lat && a.lng && a.city).forEach(a => {
+        if (!audioStats[a.city]) audioStats[a.city] = 0;
+        audioStats[a.city]++;
+      });
+      Object.entries(audioStats).forEach(([city, count]) => {
+        const center = CITY_CENTERS[city];
+        if (!center || count === 0) return;
+        const html = `<div class="city-cluster" style="border-color:#9D65CF;"><div class="cc-name" style="color:#9D65CF;">${city}</div><div class="cc-count">${count}</div></div>`;
+        const icon = L.divIcon({ html, className: '', iconAnchor: [25, 40] }); // 靠左錨點→泡泡在右
+        L.marker(center, { icon })
+          .on('click', () => map.setView(center, 11))
+          .on('mouseover', function() { this.getElement().style.zIndex = 9999; })
+          .on('mouseout',  function() { this.getElement().style.zIndex = ''; })
+          .addTo(clusterLayer);
+      });
+    }
+  }
+
+  // ============================================================
+  //  行政區叢集渲染（zoom 10~13）
+  // ============================================================
+  function renderDistrictCluster(filteredAudioList, showAudio) {
+    districtClusterLayer.clearLayers();
+
+    const mcbAll   = document.getElementById('mcb-all').checked;
+    const mcbConn  = document.getElementById('mcb-connected').checked;
+    const mcbNot   = document.getElementById('mcb-not').checked;
+    const mcbAudio = document.getElementById('mcb-audio').checked;
+    const base = _statsData || [];
+
+    function calcDistStats(dataArr) {
+      const stats = {};
+      dataArr.filter(s => s.lat && s.lng && s.city && s.district).forEach(s => {
+        const k = s.city + '__' + s.district;
+        if (!stats[k]) stats[k] = { city: s.city, district: s.district, count: 0, lats: [], lngs: [] };
+        stats[k].count++;
+        stats[k].lats.push(parseFloat(s.lat));
+        stats[k].lngs.push(parseFloat(s.lng));
+      });
+      return stats;
+    }
+
+    function drawDistMarkers(distStats, borderColor, isAudio) {
+      Object.values(distStats).forEach(stat => {
+        if (stat.count === 0) return;
+        const lat = stat.lats.reduce((a, b) => a + b, 0) / stat.lats.length;
+        const lng = stat.lngs.reduce((a, b) => a + b, 0) / stat.lngs.length;
+        const html = `<div class="city-cluster" style="border-color:${borderColor};width:64px;height:64px;">
+          <div class="cc-name" style="color:${borderColor};font-size:10px;">${stat.district}</div>
+          <div class="cc-count" style="font-size:15px;">${stat.count}</div>
+        </div>`;
+        // 號誌叢集靠右(泡泡在左)，有聲號誌靠左(泡泡在右)
+        const anchor = isAudio ? [20, 32] : [44, 32];
+        const icon = L.divIcon({ html, className: '', iconAnchor: anchor });
+        L.marker([lat, lng], { icon })
+          .on('click', () => map.setView([lat, lng], 14))
+          .on('mouseover', function() { this.getElement().style.zIndex = 9999; })
+          .on('mouseout',  function() { this.getElement().style.zIndex = ''; })
+          .addTo(districtClusterLayer);
+      });
+    }
+
+    // ── 號誌清單行政區叢集 ──
+    let signalData;
+    let signalColor = '#266EDB';
+    if (mcbConn) { signalData = base.filter(s => s.connected === '有'); signalColor = '#00CAD7'; }
+    else if (mcbNot) { signalData = base.filter(s => s.connected !== '有'); signalColor = '#ECA34E'; }
+    else signalData = base;
+    drawDistMarkers(calcDistStats(signalData), signalColor, false);  // 號誌（左）
+
+    // ── 有聲號誌行政區叢集（獨立，偏移）──
+    if (mcbAudio) {
+      drawDistMarkers(calcDistStats(filteredAudioList), '#9D65CF', true);  // 有聲（右）
+    }
+  }
+
+  // ============================================================
+  //  有聲號誌表格渲染
+  // ============================================================
+  function renderAudioTable(data) {
+    tablePage = 0;
+    document.getElementById('tab-audio').textContent = `有聲號誌 (${data.length})`;
+
+    // 動態切換表頭
+    const thead = document.querySelector('.data-table thead tr');
+    thead.innerHTML = `
+      <th>設備編號</th>
+      <th>縣市</th>
+      <th>行政區</th>
+      <th>位置</th>
+      <th>號誌類型</th>
+      <th>座標</th>`;
+
+    renderAudioPage(data, 0);
+    renderAudioPagination(data);
+  }
+
+  function renderAudioPage(data, page) {
+    const tbody = document.getElementById('signal-table-body');
+    tbody.innerHTML = '';
+    const start = page * PAGE_SIZE;
+    const end = Math.min(start + PAGE_SIZE, data.length);
+    for (let i = start; i < end; i++) {
+      const a = data[i];
+      const coord = (a.lat && a.lng)
+        ? `${parseFloat(a.lat).toFixed(4)}, ${parseFloat(a.lng).toFixed(4)}` : '—';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${a.id || '—'}</td>
+        <td>${a.city || '—'}</td>
+        <td>${a.district || '—'}</td>
+        <td>${a.location || '—'}</td>
+        <td><span class="status-cell"><span class="status-dot status-purple"></span>有聲號誌</span></td>
+        <td>${coord}</td>`;
+      if (a.lat && a.lng) tr.addEventListener('click', () => {
+        const key = parseFloat(a.lat).toFixed(4) + ',' + parseFloat(a.lng).toFixed(4);
+        map.setView([a.lat, a.lng], 16);
+        setTimeout(() => {
+          const m = markerIndex.get(key);
+          if (m) selectMarker(m, m._origColor, true);
+        }, 300);
+      });
+      tbody.appendChild(tr);
+    }
+    document.getElementById('table-card').scrollTop = 0;
+  }
+
+  function renderAudioPagination(data) {
+    const pg = document.getElementById('pagination');
+    const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+    pg.innerHTML = '';
+
+    function goTo(p) {
+      tablePage = p;
+      renderAudioPage(data, p);
+      renderAudioPagination(data);
+    }
+
+    const prev = document.createElement('a');
+    prev.className = 'paginate_button previous' + (tablePage === 0 ? ' disabled' : '');
+    prev.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    if (tablePage > 0) prev.addEventListener('click', () => goTo(tablePage - 1));
+    pg.appendChild(prev);
+
+    const span = document.createElement('span');
+    const WING = 2;
+    let pages = [];
+    if (totalPages <= 7) {
+      for (let i = 0; i < totalPages; i++) pages.push(i);
+    } else {
+      pages.push(0);
+      const lo = Math.max(1, tablePage - WING);
+      const hi = Math.min(totalPages - 2, tablePage + WING);
+      if (lo > 1) pages.push('...');
+      for (let i = lo; i <= hi; i++) pages.push(i);
+      if (hi < totalPages - 2) pages.push('...');
+      pages.push(totalPages - 1);
+    }
+    pages.forEach(p => {
+      if (p === '...') {
+        const ell = document.createElement('span');
+        ell.className = 'ellipsis'; ell.textContent = '…';
+        span.appendChild(ell);
+      } else {
+        const btn = document.createElement('a');
+        btn.className = 'paginate_button' + (p === tablePage ? ' current' : '');
+        btn.textContent = p + 1;
+        if (p !== tablePage) btn.addEventListener('click', () => goTo(p));
+        span.appendChild(btn);
+      }
+    });
+    pg.appendChild(span);
+
+    const next = document.createElement('a');
+    next.className = 'paginate_button next' + (tablePage >= totalPages - 1 ? ' disabled' : '');
+    next.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    if (tablePage < totalPages - 1) next.addEventListener('click', () => goTo(tablePage + 1));
+    pg.appendChild(next);
+  }
+
+  // ============================================================
+  //  表格渲染（頁碼分頁）
+  // ============================================================
+  function renderTable(data) {
+    tablePage = 0;
+    document.getElementById('tab-signal').textContent = `號誌清單 (${data.length})`;
+    // 恢復號誌清單表頭
+    const thead = document.querySelector('.data-table thead tr');
+    thead.innerHTML = `
+      <th>號誌ID</th>
+      <th>縣市</th>
+      <th>行政區</th>
+      <th>號誌位置</th>
+      <th>連線狀態</th>
+      <th>座標</th>`;
+    renderTablePage(data, 0);
+    renderPagination(data);
+  }
+
+  function renderTablePage(data, page) {
+    const tbody = document.getElementById('signal-table-body');
+    tbody.innerHTML = '';
+    const start = page * PAGE_SIZE;
+    const end = Math.min(start + PAGE_SIZE, data.length);
+    for (let i = start; i < end; i++) {
+      const s = data[i];
+      const connected = s.connected === '有';
+      const dotClass = connected ? 'status-green' : 'status-red';
+      const statusText = connected ? '已連線' : '未連線';
+      const coord = (s.lat && s.lng)
+        ? `${parseFloat(s.lat).toFixed(4)}, ${parseFloat(s.lng).toFixed(4)}` : '—';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${s.id || '—'}</td><td>${s.city || '—'}</td><td>${s.district || '—'}</td>
+        <td>${s.location || '—'}</td>
+        <td><span class="status-cell"><span class="status-dot ${dotClass}"></span>${statusText}</span></td>
+        <td>${coord}</td>`;
+      if (s.lat && s.lng) tr.addEventListener('click', () => {
+        const key = parseFloat(s.lat).toFixed(4) + ',' + parseFloat(s.lng).toFixed(4);
+        map.setView([s.lat, s.lng], 16);
+        // 等地圖移動後再選取 marker
+        setTimeout(() => {
+          const m = markerIndex.get(key);
+          if (m) {
+            const fillColor = m._origColor;
+            selectMarker(m, fillColor, false);
+          }
+        }, 300);
+      });
+      tbody.appendChild(tr);
+    }
+    document.getElementById('table-card').scrollTop = 0;
+  }
+
+  function renderPagination(data) {
+    const pg = document.getElementById('pagination');
+    const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+    pg.innerHTML = '';
+
+    function goTo(p) {
+      tablePage = p;
+      renderTablePage(data, p);
+      renderPagination(data);
+    }
+
+    // 上一頁
+    const prev = document.createElement('a');
+    prev.className = 'paginate_button previous' + (tablePage === 0 ? ' disabled' : '');
+    prev.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    if (tablePage > 0) prev.addEventListener('click', () => goTo(tablePage - 1));
+    pg.appendChild(prev);
+
+    // 頁碼（最多顯示 7 個，超過用 …）
+    const span = document.createElement('span');
+    const WING = 2;
+    let pages = [];
+    if (totalPages <= 7) {
+      for (let i = 0; i < totalPages; i++) pages.push(i);
+    } else {
+      pages.push(0);
+      const lo = Math.max(1, tablePage - WING);
+      const hi = Math.min(totalPages - 2, tablePage + WING);
+      if (lo > 1) pages.push('...');
+      for (let i = lo; i <= hi; i++) pages.push(i);
+      if (hi < totalPages - 2) pages.push('...');
+      pages.push(totalPages - 1);
+    }
+
+    pages.forEach(p => {
+      if (p === '...') {
+        const ell = document.createElement('span');
+        ell.className = 'ellipsis'; ell.textContent = '…';
+        span.appendChild(ell);
+      } else {
+        const btn = document.createElement('a');
+        btn.className = 'paginate_button' + (p === tablePage ? ' current' : '');
+        btn.textContent = p + 1;
+        if (p !== tablePage) btn.addEventListener('click', () => goTo(p));
+        span.appendChild(btn);
+      }
+    });
+    pg.appendChild(span);
+
+    // 下一頁
+    const next = document.createElement('a');
+    next.className = 'paginate_button next' + (tablePage >= totalPages - 1 ? ' disabled' : '');
+    next.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    if (tablePage < totalPages - 1) next.addEventListener('click', () => goTo(tablePage + 1));
+    pg.appendChild(next);
+  }
+
+  // ============================================================
+  //  統計指標 + 圓餅圖
+  // ============================================================
+  function updateStats(data, filteredAudio) {
+    const total = data.length;
+    const conn = data.filter(s => s.connected === '有').length;
+    const notConn = total - conn;
+    const rate = total > 0 ? (conn / total * 100).toFixed(1) : '0.0';
+    const circ = 251.3;
+    const audioCount = (filteredAudio || []).length;
+
+    document.getElementById('stat-total').textContent = total.toLocaleString();
+    document.getElementById('stat-connected').textContent = conn.toLocaleString();
+    document.getElementById('stat-not-connected').textContent = notConn.toLocaleString();
+    const audioEl = document.getElementById('stat-audio');
+    if (audioEl) audioEl.textContent = audioCount.toLocaleString();
+    document.getElementById('sidebar-audio-count').textContent = audioCount.toLocaleString();
+    document.getElementById('donut-rate').textContent = rate + '%';
+    document.getElementById('legend-rate').textContent = rate + '%';
+    document.getElementById('legend-not-rate').textContent = (100 - parseFloat(rate)).toFixed(1) + '%';
+    // 趨勢指標：待有去年資料後實作
+    // document.getElementById('stat-rate-badge').innerHTML = `${rate}%`;
+    const arc = (parseFloat(rate) / 100) * circ;
+    document.getElementById('donut-arc').setAttribute('stroke-dasharray', `${arc} ${circ - arc}`);
+  }
+
+  // ============================================================
+  //  篩選
+  // ============================================================
+  function initCityFilter() {
+    const sel = document.getElementById('sel-city');
+    sel.innerHTML = '<option value="">請選擇縣市</option>';
+    const cities = [...new Set(SIGNALS.map(s => s.city).filter(Boolean))].sort();
+    cities.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c; o.textContent = c; sel.appendChild(o);
+    });
+  }
+
+  document.getElementById('sel-city').addEventListener('change', function () {
+    const city = this.value;
+    const distSel = document.getElementById('sel-district');
+    distSel.innerHTML = '<option value="">請選擇行政區</option>';
+    document.getElementById('road-input-wrap').style.display = 'none';
+    document.getElementById('inp-road').value = '';
+    if (city) {
+      const dists = [...new Set(SIGNALS.filter(s => s.city === city).map(s => s.district).filter(Boolean))].sort();
+      dists.forEach(d => {
+        const o = document.createElement('option');
+        o.value = d; o.textContent = d; distSel.appendChild(o);
+      });
+    }
+  });
+
+  document.getElementById('sel-district').addEventListener('change', function () {
+    const wrap = document.getElementById('road-input-wrap');
+    if (this.value) {
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+      document.getElementById('inp-road').value = '';
+    }
+  });
+
+  function applyFilter() {
+    const mcbAll   = document.getElementById('mcb-all').checked;
+    const mcbConn  = document.getElementById('mcb-connected').checked;
+    const mcbNot   = document.getElementById('mcb-not').checked;
+    const mcbAudio = document.getElementById('mcb-audio').checked; // sidebar checkbox
+    const city = document.getElementById('sel-city').value;
+    const dist = document.getElementById('sel-district').value;
+    const road = document.getElementById('inp-road') ? document.getElementById('inp-road').value.trim() : '';
+
+    // 有聲號誌（依縣市/行政區篩選，完全獨立）
+    let filteredAudio = AUDIO_SIGNALS;
+    if (city) filteredAudio = filteredAudio.filter(a => a.city === city);
+    if (dist) filteredAudio = filteredAudio.filter(a => a.district === dist);
+
+    // 號誌清單統計用（套縣市/行政區/路名，不套 mcb）
+    let statsData = SIGNALS;
+    if (city) statsData = statsData.filter(s => s.city === city);
+    if (dist) statsData = statsData.filter(s => s.district === dist);
+    if (dist && road) statsData = statsData.filter(s => s.location && s.location.includes(road));
+
+    // 地圖/表格：號誌清單依單選群組決定
+    let displayData = [...statsData];
+    if (mcbConn) {
+      displayData = displayData.filter(s => s.connected === '有');
+    } else if (mcbNot) {
+      displayData = displayData.filter(s => s.connected !== '有');
+    }
+    // mcbAll：顯示全部號誌清單
+
+    // 有聲號誌圖層：獨立勾選控制
+    const showAudio = mcbAudio;
+
+    currentFiltered = displayData;
+    _statsData = statsData;
+    renderMap(displayData, filteredAudio, showAudio, statsData);
+
+    // 快取資料供 tab 切換用
+    _cachedSignal = displayData;
+    _cachedAudio  = filteredAudio;
+
+    // 控制有聲號誌 tab 顯示/隱藏，並即時更新筆數
+    const audioTab = document.getElementById('tab-audio');
+    const signalTab = document.getElementById('tab-signal');
+
+    // 即時更新兩個 tab 的筆數（不管目前在哪個 tab）
+    signalTab.textContent = `號誌清單 (${displayData.length})`;
+    if (mcbAudio) {
+      audioTab.textContent = `有聲號誌 (${filteredAudio.length})`;
+    }
+
+    if (mcbAudio && filteredAudio.length > 0) {
+      audioTab.classList.remove('hidden');
+    } else {
+      audioTab.classList.add('hidden');
+      // 如果目前在有聲號誌 tab 但取消勾選，切回號誌清單
+      if (_activeTab === 'audio') {
+        _activeTab = 'signal';
+        signalTab.classList.add('active');
+        audioTab.classList.remove('active');
+      }
+    }
+
+    // 依目前 active tab 渲染
+    if (_activeTab === 'audio' && mcbAudio) {
+      renderAudioTable(filteredAudio);
+    } else {
+      renderTable(displayData);
+    }
+    updateStats(statsData, filteredAudio);
+    updateFilterSummary();
+  }
+
+  function updateFilterSummary() {
+    const yearEl = document.getElementById('sel-year');
+    const year = yearEl ? yearEl.options[yearEl.selectedIndex].text : '';
+    const city = document.getElementById('sel-city').value;
+    const dist = document.getElementById('sel-district').value;
+    const road = document.getElementById('inp-road') ? document.getElementById('inp-road').value.trim() : '';
+
+    const items = [];
+    if (year) items.push(`年份：${year}年`);
+    if (city) items.push(`縣市：${city}`);
+    if (dist) items.push(`行政區：${dist}`);
+    if (road) items.push(`路名：${road}`);
+
+    const summary = document.getElementById('filter-summary');
+    const content = document.getElementById('fs-content');
+
+    summary.classList.add('visible');
+
+    // 縣市/行政區沒選就顯示「全部」
+    const displayItems = [];
+    displayItems.push(`年份：${year || '全部'}`);
+    displayItems.push(`縣市：${city || '全部'}`);
+    displayItems.push(`行政區：${dist || '全部'}`);
+    if (road) displayItems.push(`路名：${road}`);
+
+    content.innerHTML = displayItems.map(item => {
+      const [label, val] = item.split('：');
+      return `<span class="filter-summary-item"><span style="color:#7a9cc0;">${label}：</span>${val}</span>`;
+    }).join('<span class="filter-summary-sep">›</span>');
+  }
+
+  // metric card 單選邏輯（含有聲號誌）
+  // 號誌總數/已連線/未連線：單選群組
+  const MCB_IDS = ['mcb-all', 'mcb-connected', 'mcb-not'];
+  MCB_IDS.forEach(id => {
+    document.getElementById(id).addEventListener('change', function () {
+      if (this.checked) {
+        MCB_IDS.forEach(oid => {
+          if (oid !== id) document.getElementById(oid).checked = false;
+        });
+      } else {
+        // 取消時回到「號誌總數」
+        document.getElementById('mcb-all').checked = true;
+      }
+      applyFilter();
+    });
+  });
+
+  // 有聲號誌：獨立多選，不影響上方單選群組
+  document.getElementById('mcb-audio').addEventListener('change', applyFilter);
+
+  document.getElementById('btn-search').addEventListener('click', applyFilter);
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    document.getElementById('mcb-all').checked = true;
+    document.getElementById('mcb-connected').checked = false;
+    document.getElementById('mcb-not').checked = false;
+    ['cb-connected','cb-not','cb-audio'].forEach(id => document.getElementById(id).checked = false);
+    document.getElementById('sel-city').value = '';
+    document.getElementById('sel-district').innerHTML = '<option value="">請選擇行政區</option>';
+    document.getElementById('inp-road').value = '';
+    document.getElementById('road-input-wrap').style.display = 'none';
+    applyFilter();
+    updateFilterSummary();
+  });
+
+  /*document.querySelector('.table-toggle').addEventListener('click', function () {
+    const card = document.getElementById('table-card');
+    card.style.display = card.style.display === 'none' ? '' : 'none';
+  });*/
+
+$(".table-toggle").on("click", function () {
+    $("#table-collapsible").stop(true, true).slideToggle(300);
+    $(this).toggleClass("rotate");
+});
+      
+  // ============================================================
+  //  重新載入按鈕
+  // ============================================================
+  document.getElementById('btn-reload').addEventListener('click', async function () {
+    this.classList.add('spinning');
+    await loadData();
+    this.classList.remove('spinning');
+  });
+
+
+
+  // ============================================================
+  //  Sidebar 收合 / 展開（jQuery）
+  // ============================================================
+  $('.leftmenu-hide').css('cursor', 'pointer').on('click', function () {
+    $('.sidebar').addClass('collapsed');
+    $('.leftmenu-toggle-btn').addClass('visible');
+    setTimeout(() => map.invalidateSize(), 320);
+  });
+
+  $('.leftmenu-toggle-btn').css('cursor', 'pointer').on('click', function () {
+    $('.sidebar').removeClass('collapsed');
+    $('.leftmenu-toggle-btn').removeClass('visible');
+    setTimeout(() => map.invalidateSize(), 320);
+  });
+
+  // ============================================================
+  //  Table Tab 切換
+  // ============================================================
+  $('#tab-signal').on('click', function () {
+    if (_activeTab === 'signal') return;
+    _activeTab = 'signal';
+    $(this).addClass('active');
+    $('#tab-audio').removeClass('active');
+    renderTable(_cachedSignal);
+  });
+
+  $('#tab-audio').on('click', function () {
+    if (_activeTab === 'audio') return;
+    _activeTab = 'audio';
+    $(this).addClass('active');
+    $('#tab-signal').removeClass('active');
+    renderAudioTable(_cachedAudio);
+  });
+
+  // ============================================================
+  //  啟動
+  // ============================================================
+  loadData();
+  </script>
+</body>
+</html>
