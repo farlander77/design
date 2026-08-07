@@ -10,12 +10,24 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
-      --color-page: #05192F; --color-surface: #131313; --color-surface-muted: #1e1e1e;
-      --color-card: #112640; --color-card-bright: #393939; --color-border: #1f2937;
-      --color-border-soft: #666666; --color-text: #fff; --color-text-muted: #9ca3af;
-      --color-text-soft: #d1d5db; --color-blue: #3569D6; --color-blue-hover: #2563eb;
-      --color-green: #00cad7; --color-yellow: #eca34e; --color-purple: #266EDB;
-      --radius-sm: 2px; --radius: 4px; --font-sans: "Hanken Grotesk", Arial, "Noto Sans TC", sans-serif;
+        --color-page: #05192F;
+        --color-surface: #131313;
+        --color-surface-muted: #1e1e1e;
+        --color-card: #112640;
+        --color-card-bright: #393939;
+        --color-border: #1f2937;
+        --color-border-soft: #666666;
+        --color-text: #fff;
+        --color-text-muted: #9ca3af;
+        --color-text-soft: #d1d5db;
+        --color-blue: #3569D6;
+        --color-blue-hover: #2563eb;
+        --color-green: #00cad7;
+        --color-yellow: #eca34e;
+        --color-blue1: #266EDB;
+        --radius-sm: 2px;
+        --radius: 4px;
+        --font-sans: "Hanken Grotesk", Arial, "Noto Sans TC", sans-serif;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
@@ -30,7 +42,10 @@
     ::-webkit-scrollbar-track { background: var(--color-surface); }
     ::-webkit-scrollbar-thumb { background: var(--color-card-bright); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
-
+    
+      .mt6{margin-top: 6px;}  
+      .mb6{margin-bottom: 6px;}  
+    
     /* Loading overlay */
     #loading-overlay {
       position: fixed; inset: 0; z-index: 9999;
@@ -90,13 +105,15 @@
     .status-gray { --status-color: #6b7280; }
     .status-purple { --status-color: #9D65CF; }
     @keyframes pulse { 50% { opacity: .45; } }
+      
+      .main-container{ display: flex; flex-direction: row; height: 100%; }
 
     .metrics-grid {
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px; padding: 8px 0px;
     }
     .metric-card { position: relative; padding: 16px; border-top: 4px solid var(--accent-color, #4b5563); background: var(--color-card); border-radius: 5px;  border-bottom: 1px solid #1F3754;border-left: 1px solid #1F3754;border-right: 1px solid #1F3754;}
-    .metric-blue { --accent-color: var(--color-purple); }
+    .metric-blue { --accent-color: var(--color-blue1); }
     .metric-green { --accent-color: var(--color-green); }
     .metric-yellow { --accent-color: var(--color-yellow); }
     .metric-header { justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
@@ -139,6 +156,7 @@
     .checkbox-option input[type="checkbox"]:checked { background: #3569D6; border-color: #3569D6; }
     .checkbox-option input[type="checkbox"]:checked::after {
       content: ""; display: block; width: 6px; height: 10px; margin: -1px 0 0 3px;
+
       border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
     }
     .field-select {
@@ -155,7 +173,7 @@
     .button-secondary:hover { background: #4b5563; }
 
     .summary-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #112640;  border: 1px solid #1F3754; border-left: 5px solid #9d65cf; border-radius: 5px; }
-    .summary-label { font-size: 14px; font-weight: 500; }
+    .summary-label { font-size: 14px; font-weight: 500; display:flex; align-items:center; gap:10px; cursor:pointer; }
     .summary-value { text-align: right; }
     .summary-number { font-size: 24px; font-weight: 700; }
 
@@ -255,7 +273,7 @@
     .filter-summary {
       display: none; align-items: center; gap: 6px; flex-wrap: nowrap;
       padding:8px 0 0 0; background: #0a1e35; font-size: 12px;
-      overflow: hidden;
+      overflow: hidden; justify-content: space-between;
     }
     .filter-summary.visible { display: flex; }
     .filter-summary-label { color: #7a9cc0; font-weight: 600; flex-shrink: 0;  padding: 2px 10px; background: #1a3a5c;
@@ -263,7 +281,7 @@
     #fs-content { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;  }
     .filter-summary-item {
       display: flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 14px;
-      padding: 2px 10px; background: #1a3a5c; border-radius: 4px; color: #fff; white-space: nowrap;
+      padding: 2px 5px; border-radius: 4px; color: #fff; white-space: nowrap;
     }
     .filter-summary-sep { color: #fff; flex-shrink: 0; }
 
@@ -327,11 +345,27 @@
     }
     .leftmenu-toggle-btn {
       transition: opacity 0.3s ease;
+      display: none;
     }
     .leftmenu-toggle-btn.visible {
       display: flex !important;
     }
-  </style>
+      
+    .file-export{ background: #1a3a5c; color: #fff; border: 1px solid #ccc; border-radius: 5px; padding: 3px 10px;
+    border: 1px solid #266EDB; white-space: nowrap; }
+      
+    .summary-audio-checkbox{ appearance:none;-webkit-appearance:none;width:16px;height:16px;flex-shrink:0;
+    background:transparent;border:1px solid #ccc;border-radius:3px;cursor:pointer;}
+      
+    .updated-time{color:var(--color-text-muted);font-size:11px;}
+    .table-toggle{ cursor:pointer; padding:4px 8px; }
+    #road-input-wrap{ margin-top: 6px; display:none; }
+    .cb-color-blue{ --cb-color:#266EDB; }
+    .cb-color-green{ --cb-color:#00CAD7; }
+    .cb-color-yellow{ --cb-color:#ECA34E; }
+    .color-muted{ color:var(--color-text-muted); }
+      
+    </style>
 </head>
 <body>
 
@@ -353,7 +387,7 @@
     </div>
     <div class="header-actions">
       <!-- 最後更新時間 -->
-      <span style="color:var(--color-text-muted);font-size:11px;" id="last-updated"></span>
+      <span class="updated-time" id="last-updated"></span>
       <!-- 重新載入按鈕 -->
       <button class="reload-btn" id="btn-reload" title="重新讀取 Excel">
         <i class="fas fa-sync-alt"></i>
@@ -361,7 +395,7 @@
     </div>
   </header>
 
-  <div style="display: flex; flex-direction: row; height: 100%;">
+  <div class="main-container">
   <aside class="sidebar">
       <div class="filter-panel">
         <div class="filter-title">
@@ -397,14 +431,14 @@
           </div>
           <select class="field-select" id="sel-city"><option value="">請選擇縣市</option></select>
           <select class="field-select" id="sel-district"><option value="">請選擇行政區</option></select>
-          <div id="road-input-wrap" style="display:none; margin-top:6px;">
-            <div class="section-label" style="margin-bottom:6px;">
+          <div id="road-input-wrap">
+            <div class="section-label mb6">
               <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
               </svg>
               <span>路名（選填）</span>
             </div>
-            <input type="text" class="field-select" id="inp-road" placeholder="輸入路名，例如：中正路" style="height:34px;" autocomplete="off"/>
+            <input type="text" class="field-select" id="inp-road" placeholder="輸入路名，例如：中正路" autocomplete="on"/>
           </div>
         </div>
         <div class="filter-footer">
@@ -414,10 +448,8 @@
       </div>
 
       <div class="summary-row">
-        <label class="summary-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-          <input type="checkbox" id="mcb-audio"
-            style="appearance:none;-webkit-appearance:none;width:16px;height:16px;flex-shrink:0;
-                   background:transparent;border:1px solid #ccc;border-radius:3px;cursor:pointer;">
+        <label class="summary-label">
+          <input type="checkbox" id="mcb-audio" class="summary-audio-checkbox">
           <span class="color-purple">有聲號誌</span>
         </label>
         <div class="summary-value">
@@ -449,16 +481,16 @@
       
     <!-- 篩選條件摘要列 -->
     <div class="filter-summary" id="filter-summary">
-      <span class="filter-summary-label" style="display: none;">篩選條件</span><span style="display: none;">：</span>
-      <span id="fs-content"></span>
+        <span id="fs-content"></span>
+        <button class="file-export" id="btn-export-csv"><i class="fa-solid fa-download"></i> 匯出CSV</button>
     </div>
       
     <div class="metrics-grid">
     <div class="metric-card metric-blue">
       <div class="metric-header-row">
         <label class="metric-card-label" for="mcb-all">
-          <input type="checkbox" class="metric-cb" id="mcb-all" style="--cb-color:#266EDB;" checked>
-          <h3 class="metric-title color-blue" style="margin:0;">號誌總數</h3>
+          <input type="checkbox" class="metric-cb cb-color-blue" id="mcb-all" checked>
+          <h3 class="metric-title color-blue">號誌總數</h3>
         </label>
       </div>
       <div class="metric-value">
@@ -469,8 +501,8 @@
     <div class="metric-card metric-green">
       <div class="metric-header-row">
         <label class="metric-card-label" for="mcb-connected">
-          <input type="checkbox" class="metric-cb" id="mcb-connected" style="--cb-color:#00CAD7;">
-          <h3 class="metric-title color-green" style="margin:0;">已連線</h3>
+          <input type="checkbox" class="metric-cb cb-color-green" id="mcb-connected">
+          <h3 class="metric-title color-green">已連線</h3>
         </label>
       </div>
       <div class="metric-row">
@@ -478,14 +510,14 @@
           <span class="metric-number" id="stat-connected">—</span>
           <span class="metric-unit">座</span>
         </div>
-        <div class="trend-indicator" id="stat-rate-badge" style="color:var(--color-text-muted);">--</div>
+        <div class="trend-indicator color-muted" id="stat-rate-badge1">--</div>
       </div>
     </div>
     <div class="metric-card metric-yellow">
       <div class="metric-header-row">
         <label class="metric-card-label" for="mcb-not">
-          <input type="checkbox" class="metric-cb" id="mcb-not" style="--cb-color:#ECA34E;">
-          <h3 class="metric-title color-yellow" style="margin:0;">未連線</h3>
+          <input type="checkbox" class="metric-cb cb-color-yellow" id="mcb-not">
+          <h3 class="metric-title color-yellow">未連線</h3>
         </label>
       </div>
       <div class="metric-row">
@@ -493,7 +525,7 @@
           <span class="metric-number" id="stat-not-connected">—</span>
           <span class="metric-unit">座</span>
         </div>
-        <div class="trend-indicator" id="stat-rate-badge" style="color:var(--color-text-muted);">--</div>
+        <div class="trend-indicator color-muted" id="stat-rate-badge2">--</div>
       </div>
     </div>
 
@@ -502,7 +534,7 @@
 
 
     <main class="main-content">
-    <button class="leftmenu-toggle-btn" style="display: none;"><i class="fas fa-chevron-right"></i></button>
+    <button class="leftmenu-toggle-btn"><i class="fas fa-chevron-right"></i></button>
         
       <div id="map" class="map-section">
         <div class="map-legend">
@@ -518,7 +550,7 @@
             <span class="table-tab active" id="tab-signal">號誌清單</span>
             <span class="table-tab hidden" id="tab-audio">有聲號誌</span>
           </div>
-          <i class="fas fa-chevron-down table-toggle" style="cursor:pointer;padding:4px 8px;"></i>
+          <i class="fas fa-chevron-down table-toggle"></i>
         </div>
         <div id="table-collapsible">
           <div class="table-card" id="table-card">
@@ -1478,6 +1510,49 @@ $(".table-toggle").on("click", function () {
     $(this).addClass('active');
     $('#tab-signal').removeClass('active');
     renderAudioTable(_cachedAudio);
+  });
+
+  // ============================================================
+  //  匯出 CSV
+  // ============================================================
+  document.getElementById('btn-export-csv').addEventListener('click', function () {
+    const yearEl = document.getElementById('sel-year');
+    const yearText = (yearEl && yearEl.selectedIndex >= 0) ? yearEl.options[yearEl.selectedIndex].text : '';
+
+    // 全量資料（不受篩選影響）
+    const base  = SIGNALS || [];
+    const audio = AUDIO_SIGNALS || [];
+
+    // 全部縣市列表
+    const cityList = [...new Set(base.map(s => s.city).filter(Boolean))].sort();
+
+    const rows = [];
+    rows.push(['年份', yearText]);
+    rows.push(['縣市', '號誌總數', '已連線數', '未連線數', '連線率', '有聲號誌數']);
+
+    cityList.forEach(c => {
+      const cityData  = base.filter(s => s.city === c);
+      const total     = cityData.length;
+      const conn      = cityData.filter(s => s.connected === '有').length;
+      const notConn   = total - conn;
+      const rate      = total > 0 ? (conn / total * 100).toFixed(1) + '%' : '0.0%';
+      const audioCount = audio.filter(a => a.city === c).length;
+      rows.push([c, total, conn, notConn, rate, audioCount]);
+    });
+
+    // UTF-8 BOM 讓 Excel 正確顯示中文
+    const BOM = '﻿';
+    const csv = BOM + rows.map(r => r.map(v => '"' + v + '"').join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `號誌連線統計_${yearText || '全部'}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   });
 
   // ============================================================
