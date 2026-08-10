@@ -112,21 +112,7 @@
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px; padding: 8px 0px;
     }
-      
-      
-    @media(min-width:768px){
     .metric-card { position: relative; padding: 16px; border-top: 4px solid var(--accent-color, #4b5563); background: var(--color-card); border-radius: 5px;  border-bottom: 1px solid #1F3754;border-left: 1px solid #1F3754;border-right: 1px solid #1F3754;}
-    .metric-number { font-size: 30px; font-weight: 700; line-height: 1; }
-    .metric-row { justify-content: space-between; align-items: baseline; }
-    }
-      
-    @media(max-width:767px){
-    .metric-card { position: relative; padding: 6px; border-top: 4px solid var(--accent-color, #4b5563); background: var(--color-card); border-radius: 5px;  border-bottom: 1px solid #1F3754;border-left: 1px solid #1F3754;border-right: 1px solid #1F3754;}
-    .metric-number { font-size: 24px; font-weight: 700; line-height: 1; padding-bottom: 5px; }
-    .metric-row { justify-content: space-between; align-items: baseline; flex-direction: column; }
-    }
-      
-   
     .metric-blue { --accent-color: var(--color-blue1); }
     .metric-green { --accent-color: var(--color-green); }
     .metric-yellow { --accent-color: var(--color-yellow); }
@@ -134,14 +120,12 @@
     .metric-title { margin: 0; color: var(--color-text-soft); font-size: 14px; font-weight: 600; text-transform: uppercase; }
     .metric-row { justify-content: space-between; align-items: baseline; }
     .metric-value { align-items: baseline; gap: 4px; }
-    
+    .metric-number { font-size: 30px; font-weight: 700; line-height: 1; }
     .metric-unit, .summary-unit { margin-left: 4px; color: var(--color-text-muted); font-size: 12px; }
     .trend-indicator { font-size: 12px; gap: 5px; }
     .trend-positive { color: #32CB33; }
     .trend-warning { color: #FE3263; }
     .trend-neutral  { color: #9ca3af; }
-      
-
 
     .dashboard-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0px 8px 8px 8px; }
       
@@ -385,8 +369,7 @@
       
     .table-responsive {
       width: 100%;
-      overflow-x: auto;
-      overflow-y: hidden;
+      overflow: auto;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -891,9 +874,40 @@
       document.getElementById('last-updated').textContent =
         currentYear + '年 資料更新：' + new Date().toLocaleTimeString('zh-TW');
 
+      // 記住目前篩選條件
+      const savedCity = document.getElementById('sel-city').value;
+      const savedDist = document.getElementById('sel-district').value;
+      const savedRoad = document.getElementById('inp-road') ? document.getElementById('inp-road').value.trim() : '';
+
       initCityFilter();
-      applyFilter();
+
+      // 還原縣市選擇
+      if (savedCity) {
+        const cityEl = document.getElementById('sel-city');
+        cityEl.value = savedCity;
+        // 重建行政區下拉
+        const distSel = document.getElementById('sel-district');
+        distSel.innerHTML = '<option value="">請選擇行政區</option>';
+        const dists = [...new Set(SIGNALS.filter(s => s.city === savedCity).map(s => s.district).filter(Boolean))].sort();
+        dists.forEach(d => {
+          const o = document.createElement('option');
+          o.value = d; o.textContent = d; distSel.appendChild(o);
+        });
+        // 還原行政區選擇
+        if (savedDist) {
+          distSel.value = savedDist;
+          // 顯示路名輸入框
+          const wrap = document.getElementById('road-input-wrap');
+          if (wrap) wrap.style.display = 'block';
+        }
+        // 還原路名
+        if (savedRoad && document.getElementById('inp-road')) {
+          document.getElementById('inp-road').value = savedRoad;
+        }
+      }
+
       hideLoading();
+      applyFilter();
 
     } catch (err) {
       hideLoading();
@@ -1277,7 +1291,6 @@
             selectMarker(m, fillColor, false);
           }
         }, 300);
-
       });
       tbody.appendChild(tr);
     }
@@ -1558,7 +1571,16 @@
   // 有聲號誌：獨立多選，不影響上方單選群組
   document.getElementById('mcb-audio').addEventListener('change', applyFilter);
 
-  document.getElementById('btn-search').addEventListener('click', applyFilter);
+  document.getElementById('btn-search').addEventListener('click', async function () {
+    const selectedYear = document.getElementById('sel-year').value;
+    if (selectedYear && selectedYear !== currentYear) {
+      // 年份有變，重新載入 Excel
+      await loadData(selectedYear);
+    } else {
+      // 年份沒變，直接篩選
+      applyFilter();
+    }
+  });
   document.getElementById('btn-reset').addEventListener('click', () => {
     document.getElementById('mcb-all').checked = true;
     document.getElementById('mcb-connected').checked = false;
@@ -1592,9 +1614,7 @@ $(".table-toggle").on("click", function () {
   });
 
   // 切換年份：重新載入對應檔案
-  document.getElementById('sel-year').addEventListener('change', async function () {
-    if (this.value) await loadData(this.value);
-  });
+  // 年份改變不自動載入，需按搜尋按鈕才載入
 
 
 
