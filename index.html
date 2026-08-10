@@ -10,24 +10,24 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
-        --color-page: #05192F;
-        --color-surface: #131313;
-        --color-surface-muted: #1e1e1e;
-        --color-card: #112640;
-        --color-card-bright: #393939;
-        --color-border: #1f2937;
-        --color-border-soft: #666666;
-        --color-text: #fff;
-        --color-text-muted: #9ca3af;
-        --color-text-soft: #d1d5db;
-        --color-blue: #3569D6;
-        --color-blue-hover: #2563eb;
-        --color-green: #00cad7;
-        --color-yellow: #eca34e;
-        --color-blue1: #266EDB;
-        --radius-sm: 2px;
-        --radius: 4px;
-        --font-sans: "Hanken Grotesk", Arial, "Noto Sans TC", sans-serif;
+    --color-page: #05192F;
+    --color-surface: #131313;
+    --color-surface-muted: #1e1e1e;
+    --color-card: #112640;
+    --color-card-bright: #393939;
+    --color-border: #1f2937;
+    --color-border-soft: #666666;
+    --color-text: #fff;
+    --color-text-muted: #9ca3af;
+    --color-text-soft: #d1d5db;
+    --color-blue: #3569D6;
+    --color-blue-hover: #2563eb;
+    --color-green: #00cad7;
+    --color-yellow: #eca34e;
+    --color-blue1: #266EDB;
+    --radius-sm: 2px;
+    --radius: 4px;
+    --font-sans: "Hanken Grotesk", Arial, "Noto Sans TC", sans-serif;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
@@ -112,7 +112,21 @@
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px; padding: 8px 0px;
     }
+      
+      
+    @media(min-width:768px){
     .metric-card { position: relative; padding: 16px; border-top: 4px solid var(--accent-color, #4b5563); background: var(--color-card); border-radius: 5px;  border-bottom: 1px solid #1F3754;border-left: 1px solid #1F3754;border-right: 1px solid #1F3754;}
+    .metric-number { font-size: 30px; font-weight: 700; line-height: 1; }
+    .metric-row { justify-content: space-between; align-items: baseline; }
+    }
+      
+    @media(max-width:767px){
+    .metric-card { position: relative; padding: 6px; border-top: 4px solid var(--accent-color, #4b5563); background: var(--color-card); border-radius: 5px;  border-bottom: 1px solid #1F3754;border-left: 1px solid #1F3754;border-right: 1px solid #1F3754;}
+    .metric-number { font-size: 24px; font-weight: 700; line-height: 1; padding-bottom: 5px; }
+    .metric-row { justify-content: space-between; align-items: baseline; flex-direction: column; }
+    }
+      
+   
     .metric-blue { --accent-color: var(--color-blue1); }
     .metric-green { --accent-color: var(--color-green); }
     .metric-yellow { --accent-color: var(--color-yellow); }
@@ -120,11 +134,14 @@
     .metric-title { margin: 0; color: var(--color-text-soft); font-size: 14px; font-weight: 600; text-transform: uppercase; }
     .metric-row { justify-content: space-between; align-items: baseline; }
     .metric-value { align-items: baseline; gap: 4px; }
-    .metric-number { font-size: 30px; font-weight: 700; line-height: 1; }
+    
     .metric-unit, .summary-unit { margin-left: 4px; color: var(--color-text-muted); font-size: 12px; }
     .trend-indicator { font-size: 12px; gap: 5px; }
     .trend-positive { color: #32CB33; }
     .trend-warning { color: #FE3263; }
+    .trend-neutral  { color: #9ca3af; }
+      
+
 
     .dashboard-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0px 8px 8px 8px; }
       
@@ -365,6 +382,18 @@
     .cb-color-yellow{ --cb-color:#ECA34E; }
     .color-muted{ color:var(--color-text-muted); }
       
+      
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .table-responsive table {
+      width: 100%;
+      white-space: nowrap;
+    }
     </style>
 </head>
 <body>
@@ -404,9 +433,9 @@
         </div>
         <!-- 連線狀態篩選移至右上 metric cards -->
         <!-- 保留隱藏 checkbox 供 JS 讀取 -->
-        <input type="checkbox" id="cb-connected" style="display:none;">
+        <!--<input type="checkbox" id="cb-connected" style="display:none;">
         <input type="checkbox" id="cb-not" style="display:none;">
-        <input type="checkbox" id="cb-audio" style="display:none;">
+        <input type="checkbox" id="cb-audio" style="display:none;">-->
           
         <div class="filter-section">
           <div class="section-label">
@@ -553,7 +582,7 @@
           <i class="fas fa-chevron-down table-toggle"></i>
         </div>
         <div id="table-collapsible">
-          <div class="table-card" id="table-card">
+          <div class="table-card table-responsive" id="table-card">
             <table class="data-table">
               <thead>
                 <tr>
@@ -586,8 +615,16 @@
   // ============================================================
   //  設定：Excel 檔名（和 index.html 放在同一個資料夾）
   // ============================================================
-  const FILE_SIGNAL   = '115年號誌連線清單.xlsx';   // 號誌連線清單
-  const FILE_AUDIO    = '115年有聲號誌清單.xlsx';        // 有聲號誌
+  // 年份清單：程式會自動嘗試載入，成功的才顯示在下拉選單
+  // 自動計算當前民國年，從當年往回掃描到 113 年
+  const currentROCYear = new Date().getFullYear() - 1911;
+  const YEAR_LIST = [];
+  for (let y = currentROCYear; y >= 113; y--) {
+    YEAR_LIST.push(String(y));
+  }
+  const SIGNAL_FILENAME = y => y + '年號誌連線清單.xlsx';
+  const AUDIO_FILENAME  = y => y + '年有聲號誌清單.xlsx';
+  let currentYear = '';
 
   // ============================================================
   //  全域狀態
@@ -622,6 +659,7 @@
   // 依 zoom 切換三層
   let _lastData = [], _lastAudio = [], _lastShowAudio = true;
   let _statsData = []; // 統計用完整資料（不含 mcb 過濾）
+  let _prevYearSignals = null; // 前一年號誌清單（用於趨勢比較）
   function updateZoomLayers() {
     const z = map.getZoom();
     if (z >= 14) {
@@ -787,25 +825,71 @@
   // ============================================================
   //  主要載入流程
   // ============================================================
-  async function loadData() {
+  // 偵測可用年份並初始化下拉選單（用實際 fetch 嘗試）
+  async function detectYears() {
+    const available = [];
+    for (const y of YEAR_LIST) {
+      try {
+        const res = await fetch(SIGNAL_FILENAME(y) + '?t=' + Date.now());
+        if (res.ok) available.push(y);
+      } catch (e) { /* 該年份檔案不存在，跳過 */ }
+    }
+    const sel = document.getElementById('sel-year');
+    sel.innerHTML = '';
+    if (available.length === 0) {
+      sel.innerHTML = '<option value="">無可用年份</option>';
+      return null;
+    }
+    available.forEach(y => {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y + '年';
+      sel.appendChild(opt);
+    });
+    return available[0];
+  }
+
+  async function loadData(year) {
     hideError();
     showLoading('正在讀取號誌連線清單…');
 
+    // 第一次載入：自動偵測可用年份
+    if (!year) {
+      year = await detectYears();
+      if (!year) {
+        hideLoading();
+        showError('⚠ 找不到任何年份的 Excel 檔案，請確認檔案放在同一個資料夾。');
+        return;
+      }
+    }
+    currentYear = year;
+    document.getElementById('sel-year').value = year;
+
     try {
+      const prevYear = String(parseInt(year) - 1);
       const [wbSignal, wbAudio] = await Promise.all([
-        fetchWorkbook(FILE_SIGNAL),
-        fetchWorkbook(FILE_AUDIO)
+        fetchWorkbook(SIGNAL_FILENAME(year)),
+        fetchWorkbook(AUDIO_FILENAME(year))
       ]);
 
       showLoading('正在解析資料…');
       SIGNALS = parseSignalWB(wbSignal);
       AUDIO_SIGNALS = parseAudioWB(wbAudio);
 
+      // 嘗試載入前一年資料（供趨勢比較，失敗不影響主流程）
+      _prevYearSignals = null;
+      try {
+        const wbPrev = await fetchWorkbook(SIGNAL_FILENAME(prevYear));
+        _prevYearSignals = parseSignalWB(wbPrev);
+      } catch (e) {
+        _prevYearSignals = null; // 前一年檔案不存在，趨勢顯示 --
+      }
+
       // 建立有聲號誌座標集合
 
       // 更新最後載入時間
       document.getElementById('last-updated').textContent =
-        '資料更新：' + new Date().toLocaleTimeString('zh-TW');
+        currentYear + '年 資料更新：' + new Date().toLocaleTimeString('zh-TW');
 
       initCityFilter();
       applyFilter();
@@ -1193,6 +1277,7 @@
             selectMarker(m, fillColor, false);
           }
         }, 300);
+
       });
       tbody.appendChild(tr);
     }
@@ -1259,12 +1344,28 @@
   // ============================================================
   //  統計指標 + 圓餅圖
   // ============================================================
+  // 計算趨勢百分比並產生 badge HTML
+  function calcTrendBadge(curr, prev) {
+    if (prev === null || prev === undefined || prev === 0) {
+      return '<span class="trend-neutral">--</span>';
+    }
+    const diff = curr - prev;
+    const pct  = ((diff / prev) * 100).toFixed(1);
+    if (diff > 0) {
+      return `<span class="trend-positive">▲${pct}%</span>`;
+    } else if (diff < 0) {
+      return `<span class="trend-warning">▼${pct}%</span>`;
+    } else {
+      return '<span class="trend-neutral">0%</span>';
+    }
+  }
+
   function updateStats(data, filteredAudio) {
-    const total = data.length;
-    const conn = data.filter(s => s.connected === '有').length;
+    const total   = data.length;
+    const conn    = data.filter(s => s.connected === '有').length;
     const notConn = total - conn;
-    const rate = total > 0 ? (conn / total * 100).toFixed(1) : '0.0';
-    const circ = 251.3;
+    const rate    = total > 0 ? (conn / total * 100).toFixed(1) : '0.0';
+    const circ    = 251.3;
     const audioCount = (filteredAudio || []).length;
 
     document.getElementById('stat-total').textContent = total.toLocaleString();
@@ -1276,10 +1377,24 @@
     document.getElementById('donut-rate').textContent = rate + '%';
     document.getElementById('legend-rate').textContent = rate + '%';
     document.getElementById('legend-not-rate').textContent = (100 - parseFloat(rate)).toFixed(1) + '%';
-    // 趨勢指標：待有去年資料後實作
-    // document.getElementById('stat-rate-badge').innerHTML = `${rate}%`;
     const arc = (parseFloat(rate) / 100) * circ;
     document.getElementById('donut-arc').setAttribute('stroke-dasharray', `${arc} ${circ - arc}`);
+
+    // 趨勢指標：與前一年比較
+    const city = document.getElementById('sel-city').value;
+    const dist = document.getElementById('sel-district').value;
+
+    let prevConn = null, prevNotConn = null;
+    if (_prevYearSignals) {
+      let prevBase = _prevYearSignals;
+      if (city) prevBase = prevBase.filter(s => s.city === city);
+      if (dist) prevBase = prevBase.filter(s => s.district === dist);
+      prevConn    = prevBase.filter(s => s.connected === '有').length;
+      prevNotConn = prevBase.length - prevConn;
+    }
+
+    document.getElementById('stat-rate-badge1').innerHTML = calcTrendBadge(conn, prevConn);
+    document.getElementById('stat-rate-badge2').innerHTML = calcTrendBadge(notConn, prevNotConn);
   }
 
   // ============================================================
@@ -1472,8 +1587,13 @@ $(".table-toggle").on("click", function () {
   // ============================================================
   document.getElementById('btn-reload').addEventListener('click', async function () {
     this.classList.add('spinning');
-    await loadData();
+    await loadData(currentYear);
     this.classList.remove('spinning');
+  });
+
+  // 切換年份：重新載入對應檔案
+  document.getElementById('sel-year').addEventListener('change', async function () {
+    if (this.value) await loadData(this.value);
   });
 
 
@@ -1558,7 +1678,7 @@ $(".table-toggle").on("click", function () {
   // ============================================================
   //  啟動
   // ============================================================
-  loadData();
+  loadData(); // 自動偵測年份並載入
   </script>
 </body>
 </html>
