@@ -136,7 +136,7 @@
     .metric-value { align-items: baseline; gap: 4px; }
     
     .metric-unit, .summary-unit { margin-left: 4px; color: var(--color-text-muted); font-size: 12px; }
-    .trend-indicator { font-size: 12px; gap: 5px; }
+    .trend-indicator { font-size: 12px; gap: 5px; display: none; }
     .trend-positive { color: #32CB33; }
     .trend-warning { color: #FE3263; }
     .trend-neutral  { color: #9ca3af; }
@@ -202,20 +202,21 @@
     .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .donut-label { color: var(--color-text-muted); font-size: 10px; }
     .donut-value { font-size: 20px; font-weight: 700; }
+    .donut-trend-value { font-size: 11px; font-weight: 600; }
     .chart-legend { display: flex; gap: 16px; margin-top: 24px; }
     .chart-legend .legend-item { gap: 6px; font-size: 10px; }
 
-    .main-content { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-    .map-section { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #e5e7eb; }
+    .main-content { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; position: relative; height: 100svh }
+    .map-section { position: relative; /*flex: 1;*/ min-height: 0; overflow: hidden; background: #e5e7eb; height: 100svh; }
     .map-legend {
-      position: absolute; right: 5px; bottom: 10px; display: flex; gap: 16px;
+      position: absolute; right: 5px; top: -40px; display: flex; gap: 16px;
       padding: 8px 16px; border-radius: 999px; background: var(--color-surface-muted);
       box-shadow: 0 10px 15px -3px rgb(0 0 0/10%), 0 4px 6px -4px rgb(0 0 0/10%); z-index: 999;
     }
     .map-legend .legend-item { gap: 4px; font-size: 12px; }
     .legend-dot { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%; background: var(--status-color, var(--color-text-muted)); }
 
-    .table-section { width: 100%; min-height: 0; overflow: hidden; z-index: 999; }
+    .table-section { width: 100%; min-height: 0; /*overflow: hidden;*/ z-index: 999; position: absolute; bottom: 40px;}
     .table-title { gap: 4px; padding: 10px; background: #112640; display: flex; justify-content: space-between; align-items: center; }
     .table-title-text { font-size: 14px; font-weight: 600; }
     .table-card { max-height: 30vh; overflow: auto; background: var(--color-surface-muted); }
@@ -287,12 +288,11 @@
     /* ===== 篩選條件摘要列 ===== */
     .filter-summary {
       display: none; align-items: center; gap: 6px; flex-wrap: nowrap;
-      padding:8px 0 0 0; background: #0a1e35; font-size: 12px;
-      overflow: hidden; justify-content: space-between;
+      padding: 6px 0 0 0; background: #0a1e35; font-size: 12px;
+      overflow: hidden; justify-content: space-between; height: 40px;
     }
     .filter-summary.visible { display: flex; }
-    .filter-summary-label { color: #7a9cc0; font-weight: 600; flex-shrink: 0;  padding: 2px 10px; background: #1a3a5c;
-      border: 1px solid #266EDB; border-radius: 4px; }
+    .filter-summary-label { color: #7a9cc0; font-weight: 600; flex-shrink: 0;  padding: 2px 10px; background: #1a3a5c;      border: 1px solid #266EDB; border-radius: 4px; }
     #fs-content { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;  }
     .filter-summary-item {
       display: flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 14px;
@@ -303,7 +303,7 @@
     /* ===== Table Tab 切換 ===== */
     .table-tabs { display: flex; gap: 0; }
     .table-tab {
-      padding: 4px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+      padding: 4px 16px; font-size: 13px; cursor: pointer;
       color: var(--color-text-muted); background: transparent;
       border-bottom: 2px solid transparent;
       transition: color .15s, border-color .15s;
@@ -391,6 +391,28 @@
       width: 100%;
       white-space: nowrap;
     }
+      
+      .filter-area{
+          display: flex;
+          flex-shrink: 0;
+          flex-direction: column;
+          overflow: auto;
+          scrollbar-width: thin;
+          scrollbar-color: #888888 #393939;
+          gap: 8px;
+          padding: 0px;
+          height: calc(100svh - 97px);
+      }
+
+
+      /* ===== GeoServer 道路圖層控制 ===== */
+      .layer-checkbox-list { row-gap: 12px; }
+      .layer-checkbox-list .checkbox-option { min-height: 22px; }
+      .layer-color-line {
+        display: inline-block; width: 15px; height: 15px; flex: 0 0 15px;
+        border-radius: 3px; background: var(--layer-color);
+        box-shadow: 0 0 0 1px rgba(255,255,255,.08);
+      }
     </style>
 </head>
 <body>
@@ -423,6 +445,11 @@
 
   <div class="main-container">
   <aside class="sidebar">
+      <div class="leftmenu-tab" style="display: flex; gap: 8px;">
+          <span id="tab-filter" style="flex: 1; padding: 3px 10px; border-radius: 5px; font-size: 12px; text-align: center; background: #1a3a5c; color: #fff; border: 1px solid #266EDB; cursor: pointer;">篩選條件</span>
+          <span id="tab-layer" style="flex: 1; padding: 3px 10px; border: 1px solid #666; color: #666; border-radius: 5px; font-size: 12px; text-align: center; cursor: pointer;">圖層控制</span>
+      </div>
+      <div class="filter-area" id="filter-area">
       <div class="filter-panel">
         <div class="filter-title">
           <h2>篩選條件</h2>
@@ -493,11 +520,64 @@
           <div class="donut-center">
             <span class="donut-label">連線率</span>
             <span class="donut-value" id="donut-rate">—</span>
+            <span class="donut-trend-value" id="donut-rate-trend" style="font-size:11px;margin-top:2px;">--</span>
           </div>
         </div>
         <div class="chart-legend">
           <div class="legend-item"><span class="status-dot status-green"></span>已連線 <span id="legend-rate">—</span></div>
           <div class="legend-item"><span class="status-dot status-red"></span>未連線 <span id="legend-not-rate">—</span></div>
+        </div>
+
+      </div>
+      </div>
+      
+      <div class="layer-area" id="layer-area" style="display:none;">
+        <div class="filter-panel" style="padding:16px;">
+          <div class="filter-title">
+            <h2>圖層控制</h2>
+          </div>
+          <div class="filter-section">
+            <div class="checkbox-grid layer-checkbox-list" style="grid-template-columns:1fr;">
+              <label class="checkbox-option" for="layer-road-0">
+                <input type="checkbox" id="layer-road-0">
+                <span class="layer-color-line" style="--layer-color:#E34B6F;"></span>
+                <span>國道</span>
+              </label>
+              <label class="checkbox-option" for="layer-road-1">
+                <input type="checkbox" id="layer-road-1">
+                <span class="layer-color-line" style="--layer-color:#F09B3D;"></span>
+                <span>省道快速公路</span>
+              </label>
+              <label class="checkbox-option" for="layer-road-2">
+                <input type="checkbox" id="layer-road-2">
+                <span class="layer-color-line" style="--layer-color:#4F8FEA;"></span>
+                <span>市區快速道路</span>
+              </label>
+              <label class="checkbox-option" for="layer-road-3">
+                <input type="checkbox" id="layer-road-3">
+                <span class="layer-color-line" style="--layer-color:#E98462;"></span>
+                <span>省道一般公路</span>
+              </label>
+              <label class="checkbox-option" for="layer-road-4">
+                <input type="checkbox" id="layer-road-4">
+                <span class="layer-color-line" style="--layer-color:#38B8B2;"></span>
+                <span>市道、縣道</span>
+              </label>
+              <label class="checkbox-option" for="layer-road-5">
+                <input type="checkbox" id="layer-road-5">
+                <span class="layer-color-line" style="--layer-color:#D9B84F;"></span>
+                <span>鄉道、區道</span>
+              </label>
+              <label class="checkbox-option" for="layer-road-6">
+                <input type="checkbox" id="layer-road-6">
+                <span class="layer-color-line" style="--layer-color:#9D72CF;"></span>
+                <span>市區一般道路</span>
+              </label>
+            </div>
+            <div style="margin-top:12px; color:#7a9cc0; font-size:11px; line-height:1.6;">
+              各道路類別可獨立開關，線色與左側色條一致。
+            </div>
+          </div>
         </div>
       </div>
     </aside>
@@ -562,15 +642,14 @@
     <main class="main-content">
     <button class="leftmenu-toggle-btn"><i class="fas fa-chevron-right"></i></button>
         
-      <div id="map" class="map-section">
+      <div id="map" class="map-section"></div>
+
+      <div class="table-section">
         <div class="map-legend">
           <div class="legend-item"><span class="legend-dot status-green"></span>已連線</div>
           <div class="legend-item"><span class="legend-dot status-red"></span>未連線</div>
           <div class="legend-item"><span class="legend-dot status-purple"></span>有聲號誌</div>
-        </div>
-      </div>
-
-      <div class="table-section">
+        </div>  
         <div class="table-title">
           <div class="table-tabs">
             <span class="table-tab active" id="tab-signal">號誌清單</span>
@@ -643,6 +722,231 @@
   L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
     minZoom: 6, maxZoom: 19
   }).addTo(map);
+
+  // GeoServer WMS：ZX_SOURCE_LINK 依 ROADCLASS 拆成 7 個道路圖層
+  // 使用 SLD_BODY 指定每個圖層的實際線色；CQL_FILTER 控制道路分類。
+  const GEOSERVER_WMS_URL = 'https://gist.transportdata.tw/geoserver/GIS-T/wms';
+
+  function createRoadSld(color, width) {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+      <StyledLayerDescriptor version="1.0.0"
+        xmlns="http://www.opengis.net/sld"
+        xmlns:ogc="http://www.opengis.net/ogc"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <NamedLayer>
+          <Name>ZX_SOURCE_LINK</Name>
+          <UserStyle>
+            <FeatureTypeStyle>
+              <Rule>
+                <LineSymbolizer>
+                  <Stroke>
+                    <CssParameter name="stroke">${color}</CssParameter>
+                    <CssParameter name="stroke-width">${width}</CssParameter>
+                    <CssParameter name="stroke-opacity">0.95</CssParameter>
+                    <CssParameter name="stroke-linecap">round</CssParameter>
+                    <CssParameter name="stroke-linejoin">round</CssParameter>
+                  </Stroke>
+                </LineSymbolizer>
+              </Rule>
+            </FeatureTypeStyle>
+          </UserStyle>
+        </NamedLayer>
+      </StyledLayerDescriptor>`;
+  }
+
+  function createRoadWmsLayer(roadClass, color, width = 3, zIndex = 100) {
+    return L.tileLayer.wms(GEOSERVER_WMS_URL, {
+      layers: 'GIS-T:ZX_SOURCE_LINK',
+      format: 'image/png',
+      transparent: true,
+      version: '1.1.1',
+      opacity: 0.95,
+      zIndex: zIndex,
+      styles: '',
+      CQL_FILTER: `ROADCLASS='${roadClass}'`,
+      SLD_BODY: createRoadSld(color, width)
+    });
+  }
+
+  // 道路圖層疊放順序：數值越大越上層。
+  // 國道最高，市區一般道路最低，避免低階道路覆蓋高階道路。
+  const roadWmsLayers = {
+    '0': createRoadWmsLayer('0', '#E34B6F', 5, 700), // 國道：最上層
+    '1': createRoadWmsLayer('1', '#F09B3D', 4, 600), // 省道快速公路
+    '2': createRoadWmsLayer('2', '#4F8FEA', 4, 500), // 市區快速道路
+    '3': createRoadWmsLayer('3', '#E98462', 3, 400), // 省道一般公路
+    '4': createRoadWmsLayer('4', '#38B8B2', 3, 300), // 市道、縣道
+    '5': createRoadWmsLayer('5', '#D9B84F', 2, 200), // 鄉道、區道
+    '6': createRoadWmsLayer('6', '#9D72CF', 2, 100)  // 市區一般道路：最下層
+  };
+
+  // 點選道路互動層：WMS 保持原本顯示，選到的 WFS LineString 疊在最上方。
+  // pane 設在道路 WMS 之上、號誌 marker 之下，避免高亮線蓋住號誌點位。
+  map.createPane('selectedRoadPane');
+  map.getPane('selectedRoadPane').style.zIndex = 450;
+  map.getPane('selectedRoadPane').style.pointerEvents = 'none';
+
+  const GEOSERVER_WFS_URL = 'https://gis-wfs-proxy.farlander77.workers.dev/';
+  let selectedRoadLayer = null;
+  let selectedRoadRequestId = 0;
+
+  function clearSelectedRoad() {
+    if (selectedRoadLayer) {
+      map.removeLayer(selectedRoadLayer);
+      selectedRoadLayer = null;
+    }
+  }
+
+  function getEnabledRoadClasses() {
+    return ['0','1','2','3','4','5','6'].filter(roadClass => {
+      const checkbox = document.getElementById(`layer-road-${roadClass}`);
+      return checkbox && checkbox.checked && map.hasLayer(roadWmsLayers[roadClass]);
+    });
+  }
+
+  // 計算螢幕像素座標中「點到線段」的最短距離，方便從 BBOX 回傳的多條道路中選出真正點到的那一條。
+  function pointToSegmentDistance(px, py, ax, ay, bx, by) {
+    const dx = bx - ax;
+    const dy = by - ay;
+    if (dx === 0 && dy === 0) return Math.hypot(px - ax, py - ay);
+    let t = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy);
+    t = Math.max(0, Math.min(1, t));
+    const x = ax + t * dx;
+    const y = ay + t * dy;
+    return Math.hypot(px - x, py - y);
+  }
+
+  function featureDistanceToClick(feature, clickPoint) {
+    const geometry = feature && feature.geometry;
+    if (!geometry || !geometry.coordinates) return Infinity;
+
+    let lines = [];
+    if (geometry.type === 'LineString') {
+      lines = [geometry.coordinates];
+    } else if (geometry.type === 'MultiLineString') {
+      lines = geometry.coordinates;
+    } else {
+      return Infinity;
+    }
+
+    let minDistance = Infinity;
+    lines.forEach(line => {
+      for (let i = 1; i < line.length; i++) {
+        // GeoJSON 座標順序是 [lng, lat]
+        const a = map.latLngToContainerPoint([line[i - 1][1], line[i - 1][0]]);
+        const b = map.latLngToContainerPoint([line[i][1], line[i][0]]);
+        const d = pointToSegmentDistance(clickPoint.x, clickPoint.y, a.x, a.y, b.x, b.y);
+        if (d < minDistance) minDistance = d;
+      }
+    });
+    return minDistance;
+  }
+
+  function escapeRoadInfo(value) {
+    return String(value == null || value === '' ? '-' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function showSelectedRoad(feature, clickLatLng) {
+    clearSelectedRoad();
+
+    selectedRoadLayer = L.geoJSON(feature, {
+      pane: 'selectedRoadPane',
+      interactive: false,
+      style: {
+        color: '#00FF00',
+        weight: 7,
+        opacity: 1,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }
+    }).addTo(map);
+
+    const p = feature.properties || {};
+    const popupHtml = `
+      <div style="min-width:210px; line-height:1.7;">
+        <div><b>RNAME：</b>${escapeRoadInfo(p.RNAME)}</div>
+        <div><b>LINKID：</b>${escapeRoadInfo(p.LINKID)}</div>
+        <div><b>RDCNAME：</b>${escapeRoadInfo(p.RDCNAME)}</div>
+      </div>`;
+
+    L.popup({ maxWidth: 320, closeButton: true })
+      .setLatLng(clickLatLng)
+      .setContent(popupHtml)
+      .openOn(map);
+  }
+
+  async function queryRoadAtClick(e) {
+    const enabledClasses = getEnabledRoadClasses();
+    if (enabledClasses.length === 0) {
+      clearSelectedRoad();
+      return;
+    }
+
+    const requestId = ++selectedRoadRequestId;
+    const clickPoint = map.latLngToContainerPoint(e.latlng);
+
+    // 以點擊位置約 14px 的範圍建立 WFS BBOX；縮放不同時仍維持相近的點選手感。
+    const tolerancePx = 14;
+    const swPoint = L.point(clickPoint.x - tolerancePx, clickPoint.y + tolerancePx);
+    const nePoint = L.point(clickPoint.x + tolerancePx, clickPoint.y - tolerancePx);
+    const sw = map.containerPointToLatLng(swPoint);
+    const ne = map.containerPointToLatLng(nePoint);
+    const bbox = `${sw.lng},${sw.lat},${ne.lng},${ne.lat},EPSG:4326`;
+
+    const params = new URLSearchParams({
+      service: 'WFS',
+      version: '1.0.0',
+      request: 'GetFeature',
+      typeName: 'GIS-T:ZX_SOURCE_LINK',
+      outputFormat: 'application/json',
+      maxFeatures: '60',
+      bbox: bbox
+    });
+
+    try {
+      const response = await fetch(`${GEOSERVER_WFS_URL}?${params.toString()}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (requestId !== selectedRoadRequestId) return;
+
+      const features = (data.features || []).filter(feature => {
+        const roadClass = String((feature.properties || {}).ROADCLASS ?? '');
+        return enabledClasses.includes(roadClass);
+      });
+
+      if (!features.length) {
+        clearSelectedRoad();
+        return;
+      }
+
+      let nearestFeature = null;
+      let nearestDistance = Infinity;
+      features.forEach(feature => {
+        const distance = featureDistanceToClick(feature, clickPoint);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestFeature = feature;
+        }
+      });
+
+      // 查詢 BBOX 雖然已限制在 14px，仍再做一次像素距離確認，避免選到只是擦過 BBOX 邊角的道路。
+      if (!nearestFeature || nearestDistance > tolerancePx + 2) {
+        clearSelectedRoad();
+        return;
+      }
+
+      showSelectedRoad(nearestFeature, e.latlng);
+    } catch (err) {
+      console.error('道路點選查詢失敗：', err);
+    }
+  }
+
   // 個別 marker 圖層（zoom >= 14 時顯示）
   const layerGroup = L.layerGroup();
   const audioLayerGroup = L.layerGroup();
@@ -841,6 +1145,7 @@
       const opt = document.createElement('option');
       opt.value = y;
       opt.textContent = y + '年';
+
       sel.appendChild(opt);
     });
     return available[0];
@@ -968,6 +1273,9 @@
       selectedMarker = null;
     }
   });
+
+  // 點擊 WMS 道路時，以 WFS 找最近的實際 LineString 並疊上綠色高亮線。
+  map.on('click', queryRoadAtClick);
 
   // marker key → marker 物件的查詢表（供表格列點擊使用）
   const markerIndex = new Map();
@@ -1374,6 +1682,7 @@
   // 計算趨勢百分比並產生 badge HTML
   function calcTrendBadge(curr, prev) {
     if (prev === null || prev === undefined || prev === 0) {
+
       return '<span class="trend-neutral">--</span>';
     }
     const diff = curr - prev;
@@ -1422,6 +1731,25 @@
 
     document.getElementById('stat-rate-badge1').innerHTML = calcTrendBadge(conn, prevConn);
     document.getElementById('stat-rate-badge2').innerHTML = calcTrendBadge(notConn, prevNotConn);
+
+    // 連線率趨勢（圓餅圖下方）
+    const donutTrend = document.getElementById('donut-rate-trend');
+    if (_prevYearSignals && prevConn !== null) {
+      const prevTotal = (prevConn !== null && prevNotConn !== null) ? prevConn + prevNotConn : 0;
+      const prevRate  = prevTotal > 0 ? (prevConn / prevTotal) * 100 : 0;
+      const currRate  = total > 0 ? (conn / total) * 100 : 0;
+      const diff      = (currRate - prevRate).toFixed(2);
+      const absDiff   = Math.abs(diff);
+      if (parseFloat(diff) > 0) {
+        donutTrend.innerHTML = `<span class="trend-positive">▲${absDiff}%</span>`;
+      } else if (parseFloat(diff) < 0) {
+        donutTrend.innerHTML = `<span class="trend-warning">▼${absDiff}%</span>`;
+      } else {
+        donutTrend.innerHTML = `<span class="trend-neutral">0%</span>`;
+      }
+    } else {
+      donutTrend.innerHTML = '<span class="trend-neutral">--</span>';
+    }
   }
 
   // ============================================================
@@ -1708,6 +2036,62 @@ $(".table-toggle").on("click", function () {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
+
+  // ============================================================
+  //  篩選 / 圖層 Tab 切換
+  // ============================================================
+  const tabFilter = document.getElementById('tab-filter');
+  const tabLayer  = document.getElementById('tab-layer');
+  const filterArea = document.getElementById('filter-area');
+  const layerArea  = document.getElementById('layer-area');
+
+  function setActiveTab(active) {
+    if (active === 'filter') {
+      tabFilter.style.background    = '#1a3a5c';
+      tabFilter.style.color         = '#fff';
+      tabFilter.style.borderColor   = '#266EDB';
+      tabLayer.style.background     = '';
+      tabLayer.style.color          = '#666';
+      tabLayer.style.borderColor    = '#666';
+      filterArea.style.display = '';
+      layerArea.style.display  = 'none';
+    } else {
+      tabLayer.style.background    = '#1a3a5c';
+      tabLayer.style.color         = '#fff';
+      tabLayer.style.borderColor   = '#266EDB';
+      tabFilter.style.background   = '';
+      tabFilter.style.color        = '#666';
+      tabFilter.style.borderColor  = '#666';
+      layerArea.style.display  = '';
+      filterArea.style.display = 'none';
+    }
+  }
+
+  tabFilter.addEventListener('click', () => setActiveTab('filter'));
+  tabLayer.addEventListener('click',  () => setActiveTab('layer'));
+
+  // GeoServer 道路圖層 checkbox 開關
+  function bindRoadLayerToggle(roadClass) {
+    const checkbox = document.getElementById(`layer-road-${roadClass}`);
+    const layer = roadWmsLayers[roadClass];
+    if (!checkbox || !layer) return;
+
+    checkbox.addEventListener('change', function () {
+      if (this.checked) {
+        if (!map.hasLayer(layer)) layer.addTo(map);
+      } else {
+        if (map.hasLayer(layer)) map.removeLayer(layer);
+        // 關閉道路類別時清除目前高亮，避免留下已關閉圖層的選取線。
+        clearSelectedRoad();
+        map.closePopup();
+      }
+    });
+  }
+
+  ['0','1','2','3','4','5','6'].forEach(bindRoadLayerToggle);
+
+  // 初始：篩選為 active
+  setActiveTab('filter');
 
   // ============================================================
   //  啟動
