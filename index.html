@@ -106,7 +106,11 @@
     .status-purple { --status-color: #9D65CF; }
     @keyframes pulse { 50% { opacity: .45; } }
       
+      
+      
+    /*.main-container{ display: flex; flex-direction: row; height: 100%;}*/
     .main-container{ display: flex; flex-direction: row; height: 100svh; }
+      
 
     .metrics-grid {
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -205,9 +209,17 @@
     .donut-trend-value { font-size: 11px; font-weight: 600; }
     .chart-legend { display: flex; gap: 16px; margin-top: 24px; }
     .chart-legend .legend-item { gap: 6px; font-size: 10px; }
+      
+    /*.main-content { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .map-section { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #e5e7eb; }
+    .table-section { position: relative; width: 100%; min-height: 0; z-index: 999; }*/
 
     .main-content { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; position: relative; height: 100svh }
-    .map-section { position: relative; /*flex: 1;*/ min-height: 0; overflow: hidden; background: #e5e7eb; height: 100svh; }
+    .map-section { position: relative; min-height: 0; overflow: hidden; background: #e5e7eb; height: calc(100svh - 500px);  transition: height 0.3s ease; }
+    .map-section.full-height { height: 100svh; }
+    .table-section { width: 100%; min-height: 0; z-index: 999; position: absolute; bottom: 40px;} 
+      
+      
     .map-legend {
       position: absolute; right: 5px; top: -40px; display: flex; gap: 16px;
       padding: 8px 16px; border-radius: 999px; background: var(--color-surface-muted);
@@ -216,7 +228,7 @@
     .map-legend .legend-item { gap: 4px; font-size: 12px; }
     .legend-dot { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%; background: var(--status-color, var(--color-text-muted)); }
 
-    .table-section { width: 100%; min-height: 0; /*overflow: hidden;*/ z-index: 999; position: absolute; bottom: 40px;}
+   
     .table-title { gap: 4px; padding: 10px; background: #112640; display: flex; justify-content: space-between; align-items: center; }
     .table-title-text { font-size: 14px; font-weight: 600; }
     .table-card { max-height: 30vh; overflow: auto; background: var(--color-surface-muted); }
@@ -301,6 +313,19 @@
     .filter-summary-sep { color: #fff; flex-shrink: 0; }
 
     /* ===== Table Tab 切換 ===== */
+      
+    .leftmenu-tab{ display: flex; gap: 8px; }
+    .leftmenu-tab-btn{
+      flex: 1; padding: 3px 10px; border-radius: 5px; font-size: 12px;
+      text-align: center; background: transparent; color: #666;
+      border: 1px solid #666; cursor: pointer;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
+    }
+    .leftmenu-tab-btn.active{
+      background: #1a3a5c; color: #fff; border-color: #266EDB;
+    }
+    
+      
     .table-tabs { display: flex; gap: 0; }
     .table-tab {
       padding: 4px 16px; font-size: 13px; cursor: pointer;
@@ -318,8 +343,8 @@
      #tab-audio.active::after {background: #266EDB;}
      #tab-audio.active::after {background: #9D65CF;}
       
-     .fa-chevron-down {transition: transform .3s;}
-     .fa-chevron-down.rotate {transform: rotate(180deg);}    
+     .fa-chevron-down { transition: transform 0.3s ease; }
+     .fa-chevron-down.rotate { transform: rotate(180deg); }    
 
     /* ===== 縣市叢集 ===== */
     .city-cluster-wrap { transition: z-index 0s; }
@@ -372,7 +397,7 @@
     .summary-audio-checkbox{ appearance:none;-webkit-appearance:none;width:16px;height:16px;flex-shrink:0;
     background:transparent;border:1px solid #ccc;border-radius:3px;cursor:pointer;}
       
-    .updated-time{color:var(--color-text-muted);font-size:11px;}
+    .updated-time{ color:var(--color-text-muted); font-size:11px; }
     .table-toggle{ cursor:pointer; padding:4px 8px; }
     #road-input-wrap{ margin-top: 6px; display:none; }
     .cb-color-blue{ --cb-color:#266EDB; }
@@ -403,16 +428,40 @@
           padding: 0px;
           height: calc(100svh - 97px);
       }
+      
+      .layer-area{
+          display: flex;
+          flex-shrink: 0;
+          flex-direction: column;
+          overflow: auto;
+          scrollbar-width: thin;
+          scrollbar-color: #888888 #393939;
+          gap: 8px;
+          padding: 0px;
+          height: calc(100svh - 97px);
+      }
 
+      .layer-panel { padding: 16px; background: #112640; border: 1px solid #1F3754; border-radius: 5px; }
+      .layer-panel > * + * { margin-top: 24px; }
+      .layer-title { display: flex; justify-content: space-between; border-bottom: 1px solid #666; padding-bottom: 10px; }
+      .layer-title h2 { margin: 0; font-size: 14px; font-weight: 600; }
+      .layer-section { margin-top: 10px; gap: 5px; }
 
       /* ===== GeoServer 道路圖層控制 ===== */
-      .layer-checkbox-list { row-gap: 12px; }
+      .layer-checkbox-list { row-gap: 12px; grid-template-columns:1fr; }
       .layer-checkbox-list .checkbox-option { min-height: 22px; }
       .layer-color-line {
         display: inline-block; width: 15px; height: 15px; flex: 0 0 15px;
-        border-radius: 3px; background: var(--layer-color);
-        box-shadow: 0 0 0 1px rgba(255,255,255,.08);
+        border-radius: 3px; box-shadow: 0 0 0 1px rgba(255,255,255,.08);
       }
+      
+      .layer-color-0{background:#e0365e;}
+      .layer-color-1{background:#E66D45;/* background:#F09B3D;*/}
+      .layer-color-2{background:#0048ff;}
+      .layer-color-3{background:#1DB2FF;}
+      .layer-color-4{background:#38B8B2;}
+      .layer-color-5{background:#FF72DF; /*background:#D9B84F;*/}
+      .layer-color-6{background:#9D65CF;}
     </style>
 </head>
 <body>
@@ -445,9 +494,9 @@
 
   <div class="main-container">
   <aside class="sidebar">
-      <div class="leftmenu-tab" style="display: flex; gap: 8px;">
-          <span id="tab-filter" style="flex: 1; padding: 3px 10px; border-radius: 5px; font-size: 12px; text-align: center; background: #1a3a5c; color: #fff; border: 1px solid #266EDB; cursor: pointer;">篩選條件</span>
-          <span id="tab-layer" style="flex: 1; padding: 3px 10px; border: 1px solid #666; color: #666; border-radius: 5px; font-size: 12px; text-align: center; cursor: pointer;">圖層控制</span>
+      <div class="leftmenu-tab">
+          <span class="leftmenu-tab-btn active" id="tab-filter">篩選條件</span>
+          <span class="leftmenu-tab-btn" id="tab-layer">圖層控制</span>
       </div>
       <div class="filter-area" id="filter-area">
       <div class="filter-panel">
@@ -520,7 +569,7 @@
           <div class="donut-center">
             <span class="donut-label">連線率</span>
             <span class="donut-value" id="donut-rate">—</span>
-            <span class="donut-trend-value" id="donut-rate-trend" style="font-size:11px;margin-top:2px;">--</span>
+            <span class="donut-trend-value" id="donut-rate-trend" style="font-size:11px; margin-top:2px;">--</span>
           </div>
         </div>
         <div class="chart-legend">
@@ -531,50 +580,51 @@
       </div>
       </div>
       
-      <div class="layer-area" id="layer-area" style="display:none;">
-        <div class="filter-panel" style="padding:16px;">
-          <div class="filter-title">
+      <div class="layer-area" id="layer-area" style="display: none;">
+        <div class="layer-panel" style="padding:16px;">
+          <div class="layer-title">
             <h2>圖層控制</h2>
+            <div class="leftmenu-hide"><i class="fas fa-chevron-left"></i></div>
           </div>
-          <div class="filter-section">
-            <div class="checkbox-grid layer-checkbox-list" style="grid-template-columns:1fr;">
+          <div class="layer-section">
+            <div class="checkbox-grid layer-checkbox-list">
               <label class="checkbox-option" for="layer-road-0">
                 <input type="checkbox" id="layer-road-0">
-                <span class="layer-color-line" style="--layer-color:#E34B6F;"></span>
+                <span class="layer-color-line layer-color-0"></span>
                 <span>國道</span>
               </label>
               <label class="checkbox-option" for="layer-road-1">
                 <input type="checkbox" id="layer-road-1">
-                <span class="layer-color-line" style="--layer-color:#F09B3D;"></span>
+                <span class="layer-color-line layer-color-1"></span>
                 <span>省道快速公路</span>
               </label>
               <label class="checkbox-option" for="layer-road-2">
                 <input type="checkbox" id="layer-road-2">
-                <span class="layer-color-line" style="--layer-color:#4F8FEA;"></span>
+                <span class="layer-color-line layer-color-2"></span>
                 <span>市區快速道路</span>
               </label>
               <label class="checkbox-option" for="layer-road-3">
                 <input type="checkbox" id="layer-road-3">
-                <span class="layer-color-line" style="--layer-color:#E98462;"></span>
+                <span class="layer-color-line layer-color-3"></span>
                 <span>省道一般公路</span>
               </label>
               <label class="checkbox-option" for="layer-road-4">
                 <input type="checkbox" id="layer-road-4">
-                <span class="layer-color-line" style="--layer-color:#38B8B2;"></span>
+                <span class="layer-color-line layer-color-4"></span>
                 <span>市道、縣道</span>
               </label>
               <label class="checkbox-option" for="layer-road-5">
                 <input type="checkbox" id="layer-road-5">
-                <span class="layer-color-line" style="--layer-color:#D9B84F;"></span>
+                <span class="layer-color-line layer-color-5"></span>
                 <span>鄉道、區道</span>
               </label>
               <label class="checkbox-option" for="layer-road-6">
                 <input type="checkbox" id="layer-road-6">
-                <span class="layer-color-line" style="--layer-color:#9D72CF;"></span>
+                <span class="layer-color-line layer-color-6"></span>
                 <span>市區一般道路</span>
               </label>
             </div>
-            <div style="margin-top:12px; color:#7a9cc0; font-size:11px; line-height:1.6;">
+            <div style="margin-top:12px; color:#7a9cc0; font-size:11px; line-height:1.6; display: none;">
               各道路類別可獨立開關，線色與左側色條一致。
             </div>
           </div>
@@ -772,13 +822,13 @@
   // 道路圖層疊放順序：數值越大越上層。
   // 國道最高，市區一般道路最低，避免低階道路覆蓋高階道路。
   const roadWmsLayers = {
-    '0': createRoadWmsLayer('0', '#E34B6F', 5, 700), // 國道：最上層
-    '1': createRoadWmsLayer('1', '#F09B3D', 4, 600), // 省道快速公路
-    '2': createRoadWmsLayer('2', '#4F8FEA', 4, 500), // 市區快速道路
-    '3': createRoadWmsLayer('3', '#E98462', 3, 400), // 省道一般公路
+    '0': createRoadWmsLayer('0', '#e0365e', 5, 700), // 國道：最上層
+    '1': createRoadWmsLayer('1', '#E66D45', 4, 600), // 省道快速公路
+    '2': createRoadWmsLayer('2', '#0048ff', 4, 500), // 市區快速道路
+    '3': createRoadWmsLayer('3', '#1DB2FF', 3, 400), // 省道一般公路
     '4': createRoadWmsLayer('4', '#38B8B2', 3, 300), // 市道、縣道
-    '5': createRoadWmsLayer('5', '#D9B84F', 2, 200), // 鄉道、區道
-    '6': createRoadWmsLayer('6', '#9D72CF', 2, 100)  // 市區一般道路：最下層
+    '5': createRoadWmsLayer('5', '#FF72DF', 2, 200), // 鄉道、區道
+    '6': createRoadWmsLayer('6', '#9D65CF', 2, 100)  // 市區一般道路：最下層
   };
 
   // 點選道路互動層：WMS 保持原本顯示，選到的 WFS LineString 疊在最上方。
@@ -788,6 +838,7 @@
   map.getPane('selectedRoadPane').style.pointerEvents = 'none';
 
   const GEOSERVER_WFS_URL = 'https://gis-wfs-proxy.farlander77.workers.dev/';
+  /*const GEOSERVER_WFS_URL = 'https://gist.transportdata.tw/geoserver/GIS-T/ows';*/
   let selectedRoadLayer = null;
   let selectedRoadRequestId = 0;
 
@@ -1943,7 +1994,11 @@
 
 $(".table-toggle").on("click", function () {
     $("#table-collapsible").stop(true, true).slideToggle(300);
+    $(".map-section").toggleClass("full-height");
     $(this).toggleClass("rotate");
+    setTimeout(function () {
+        map.invalidateSize({pan: false});
+    }, 300);
 });
       
   // ============================================================
@@ -2046,25 +2101,14 @@ $(".table-toggle").on("click", function () {
   const layerArea  = document.getElementById('layer-area');
 
   function setActiveTab(active) {
-    if (active === 'filter') {
-      tabFilter.style.background    = '#1a3a5c';
-      tabFilter.style.color         = '#fff';
-      tabFilter.style.borderColor   = '#266EDB';
-      tabLayer.style.background     = '';
-      tabLayer.style.color          = '#666';
-      tabLayer.style.borderColor    = '#666';
-      filterArea.style.display = '';
-      layerArea.style.display  = 'none';
-    } else {
-      tabLayer.style.background    = '#1a3a5c';
-      tabLayer.style.color         = '#fff';
-      tabLayer.style.borderColor   = '#266EDB';
-      tabFilter.style.background   = '';
-      tabFilter.style.color        = '#666';
-      tabFilter.style.borderColor  = '#666';
-      layerArea.style.display  = '';
-      filterArea.style.display = 'none';
-    }
+    const isFilter = active === 'filter';
+
+    // 樣式統一交給 CSS 的 .active 控制
+    tabFilter.classList.toggle('active', isFilter);
+    tabLayer.classList.toggle('active', !isFilter);
+
+    filterArea.style.display = isFilter ? '' : 'none';
+    layerArea.style.display  = isFilter ? 'none' : '';
   }
 
   tabFilter.addEventListener('click', () => setActiveTab('filter'));
