@@ -1,1 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🚌 自駕巴士搭乘體驗問卷</title>
+<style>
+:root {
+  --bg: #e8f4fd;
+  --card: #ffffff;
+  --primary: #2196f3;
+  --primary-dark: #1565c0;
+  --accent: #ff9800;
+  --success: #4caf50;
+  --text: #1a237e;
+  --muted: #78909c;
+  --shadow: 0 0 25px rgba(0,0,0,0.5);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+  /*background: linear-gradient(135deg, #e3f2fd 0%, #e8eaf6 100%);*/
+  background: url("images/bg1.jpg") center center;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0rem 1rem 4rem 1rem;
+}
 
+.bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100dvw;
+  height: 100dvh;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.balloon {
+  position: absolute;
+  top: calc(50% - 290px);
+  left: calc(50% + 100px);
+  z-index: -1;
+}
+    
+.sun {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translate(-50% ,0);
+  z-index: -1;
+}
+
+.moving-map {
+  position: absolute;
+  bottom: 65px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 50%;
+  z-index: -2;
+
+  background-image: url("images/map3.png");
+  background-repeat: repeat-x;
+  background-position-y: bottom;
+  background-position-x: 0;
+  animation: mapMove 50s linear infinite;
+}
+
+
+@keyframes mapMove {
+  from {
+    background-position-x: 2400px;
+  }
+
+  to {
+    background-position-x: 0px;
+  }
+}
+    
+    
+.road1 {
+  width: 110vw;
+  height: 150px;
+  background: #6d7478;
+  position: absolute;
+  bottom: 0;
+  left: -5vw;
+  z-index: -2;
+  overflow: hidden;
+}
+
+.road1::before {
+  content: "";
+  position: absolute;
+  left: -20px;          /* 左右多延伸一點，避免斜切後邊緣露出空隙 */
+  right: -20px;
+  top: 50%;
+  height: 10px;         /* 白線粗細 */
+
+  background: repeating-linear-gradient(
+    90deg,
+    #fff 0 40px,
+    transparent 40px 80px
+  );
+
+  transform: translateY(-50%) skewX(-35deg);  /* 傾斜角度 */
+  animation: roadLineMove 0.5s linear infinite;
+}
+
+@keyframes roadLineMove {
+  from { background-position-x: 80px; }
+  to   { background-position-x: 0; }
+}
+
+.autobus{
+    position: absolute;
+    bottom: 70px;
+    left: calc(50% - 175px);
+    z-index: -1;
+}
+
+.wheel1{
+    position: absolute;
+    bottom: 113px;
+    left: calc(50% - 101px);
+    z-index: -1;
+}
+
+.wheel2{
+    position: absolute;
+    bottom: 113px;
+    left: calc(50% + 73px);
+    z-index: -1;
+}
+    
+.wheel {
+    display: block;
+    animation: wheelRotate 1s linear infinite;
+    transform-origin: center center;
+}
+
+@keyframes wheelRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+    
+.container {
+  width: 100%;
+  max-width: 480px;
+}
+.card {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.4s ease;
+
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.step { display: none; }
+.step.active { display: block; }
+
+/* Progress bar */
+.progress-wrap {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 1.5rem;
+}
+.progress-dot {
+  height: 6px;
+  border-radius: 3px;
+  flex: 1;
+  background: #e0e0e0;
+  transition: background 0.3s;
+}
+.progress-dot.done { background: var(--primary); }
+
+h2 {
+  font-size: 1.3rem;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+  line-height: 1.4;
+}
+.subtitle {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+.hero-emoji {
+  font-size: 4rem;
+  text-align: center;
+  margin: 1rem 0 0 0;
+  display: block;
+}
+
+/* Buttons */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  margin-top: 1rem;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  box-shadow: 0 4px 15px rgba(33,150,243,0.4);
+}
+.btn-success {
+  background: linear-gradient(135deg, var(--success), #2e7d32);
+  color: white;
+  box-shadow: 0 4px 15px rgba(76,175,80,0.4);
+}
+
+/* Choice options */
+.choices { display: flex; flex-direction: column; gap: 0.6rem; }
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: white;
+}
+.choice:hover { border-color: var(--primary); background: #e3f2fd; }
+.choice.selected {
+  border-color: var(--primary);
+  background: #e3f2fd;
+  font-weight: 600;
+}
+.choice .icon { font-size: 1.5rem; }
+
+/* Emoji grid for Q1 */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+.emoji-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1rem 0.5rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+  color: var(--text);
+  text-align: center;
+}
+.emoji-choice .big { font-size: 2.2rem; }
+.emoji-choice:hover { border-color: var(--primary); background: #e3f2fd; }
+.emoji-choice.selected {
+  border-color: var(--primary);
+  background: #e3f2fd;
+  font-weight: 600;
+}
+
+/* Input fields */
+.field { margin-bottom: 1rem; }
+.field label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+.field input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+  color: var(--text);
+}
+.field input:focus { border-color: var(--primary); }
+.required { color: #f44336; }
+.error-msg { color: #f44336; font-size: 0.82rem; margin-top: 0.3rem; display: none; }
+
+/* Thank you */
+.thanks-anim { text-align: center; }
+.thanks-anim .big-icon { font-size: 5rem; animation: pop 0.5s ease; }
+@keyframes pop {
+  0%{transform:scale(0)} 80%{transform:scale(1.15)} 100%{transform:scale(1)}
+}
+.stars { font-size: 1.5rem; letter-spacing: 4px; margin: 0.5rem 0; }
+
+/* confetti */
+.confetti-wrap {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 999;
+}
+.confetto {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  animation: fall linear forwards;
+}
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+
+
+/* ───── 版面調整：卡片過長時可正常捲動、背景固定 ───── */
+html { scroll-behavior: smooth; }
+body {
+  align-items: normal;
+  padding: 4rem 1rem 5rem 1rem;
+  background-attachment: fixed;
+  background-size: cover;
+}
+.bg { position: fixed; }
+.container { /*margin: auto;*/ }
+.card { padding: 1.8rem 1.6rem 1.6rem; }
+
+/* ───── 語言切換 ───── */
+.lang-switch {
+  position: fixed; top: 0.9rem; right: 0.9rem; z-index: 50;
+  display: flex; background: rgba(255,255,255,.92); border-radius: 999px; padding: 3px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25); backdrop-filter: blur(4px);
+}
+.lang-switch button {
+  border: none; background: transparent; padding: .38rem .85rem; border-radius: 999px;
+  font-size: .82rem; font-weight: 700; color: var(--muted); cursor: pointer; font-family: inherit;
+  transition: all .2s;
+}
+.lang-switch button.on { background: var(--primary); color: #fff; box-shadow: 0 2px 6px rgba(33,150,243,.45); }
+.lang-switch button:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 2px; }
+
+/* ───── 進度 ───── */
+.progress-meta { display:flex; justify-content: space-between; align-items:center; font-size:.75rem; color: var(--muted); margin: -.9rem 0 1.1rem; }
+.progress-wrap { display: block; margin-bottom: 1.6rem; }
+
+/* ───── 按鈕列（返回＋下一步） ───── */
+.nav { display: flex; gap: .6rem; margin-top: 1.2rem; }
+.nav .btn { margin-top: 0; }
+.nav .btn-back { flex: 0 0 34%; }
+.nav .btn-next { flex: 1; }
+.btn-ghost { background: #eef3f8; color: var(--primary-dark); box-shadow: none; }
+.btn-ghost:hover { background: #dfe9f3; }
+.btn.disabled { opacity: .45; pointer-events: none; filter: grayscale(.3); }
+.btn:focus-visible, .chip:focus-visible, .choice:focus-visible, .star-btn:focus-visible { outline: 3px solid #ffb300; outline-offset: 2px; }
+.need-hint { font-size: .78rem; color: var(--muted); text-align: center; margin-top: .5rem; min-height: 1rem; }
+
+/* ───── 題目元件 ───── */
+.group { margin-bottom: 1.25rem; }
+.group-title { font-size: 0.93rem; font-weight: 600; color: var(--text); margin-bottom: 0.55rem; line-height: 1.45; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.chip {
+  padding: 0.5rem 0.95rem; border: 2px solid #e0e0e0; border-radius: 999px;
+  font-size: 0.88rem; color: var(--text); cursor: pointer; background: #fff; transition: all 0.2s;
+  font-family: inherit; line-height: 1.3;
+}
+.chip:hover { border-color: var(--primary); background: #e3f2fd; }
+.chip.selected { border-color: var(--primary); background: #e3f2fd; font-weight: 700; }
+.chip.selected::before { content: '✓ '; color: var(--primary); }
+.choice { font-family: inherit; text-align: left; width: 100%; }
+.choice.selected::after { content: '✓'; margin-left: auto; color: var(--primary); font-weight: 800; }
+.other-input {
+  display: none; width: 100%; margin-top: .55rem; padding: .6rem .9rem; border: 2px solid #e0e0e0;
+  border-radius: 12px; font-size: .9rem; font-family: inherit; color: var(--text); outline: none;
+}
+.other-input.show { display: block; }
+.other-input:focus { border-color: var(--primary); }
+
+.rate-row { margin-bottom: 1.15rem; padding-bottom: 1rem; border-bottom: 1px dashed #e3e8ee; }
+.rate-row:last-child { border-bottom: none; }
+.stars-row { display: flex; gap: .15rem; }
+.star-btn {
+  font-size: 2.1rem; line-height: 1; background: none; border: none; font-family: inherit;
+  color: #cfd8dc; cursor: pointer; padding: 0 .12rem; transition: transform .12s, color .15s;
+}
+.star-btn.on { color: #ffb300; text-shadow: 0 2px 6px rgba(255,179,0,.35); }
+.star-btn:hover { transform: scale(1.12); }
+.rate-cap { font-size: .8rem; color: var(--primary-dark); min-height: 1.15rem; margin-top: .15rem; font-weight: 600; }
+.rate-ends { display:flex; justify-content: space-between; font-size: .72rem; color: var(--muted); max-width: 16rem; margin-top: .1rem; }
+.req { color: #f44336; }
+.tag-opt { font-size: .75rem; color: var(--muted); font-weight: 400; }
+
+textarea#inp-suggest {
+  width: 100%; padding: .8rem 1rem; border: 2px solid #e0e0e0; border-radius: 12px;
+  font-size: .95rem; font-family: inherit; outline: none; resize: vertical; min-height: 8rem; color: var(--text); line-height: 1.5;
+}
+textarea#inp-suggest:focus { border-color: var(--primary); }
+.counter { text-align: right; font-size: .72rem; color: var(--muted); margin-top: .25rem; }
+.field input.invalid { border-color: #f44336; }
+
+@media (max-width: 380px) {
+  .card { padding: 1.4rem 1.1rem; }
+  .star-btn { font-size: 1.85rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="lang-switch" role="group" aria-label="Language">
+  <button type="button" id="lang-zh" onclick="setLang('zh')">中文</button>
+  <button type="button" id="lang-en" onclick="setLang('en')">EN</button>
+</div>
+
+<div class="bg">
+  <div class="balloon" style="display: none;"><img src="images/balloon.png" width="34" height="45" alt=""></div>
+    <div class="sun"><img src="images/logo.png" width="1550" alt=""></div>
+    <div class="moving-map"></div>
+    <div class="autobus"><img src="images/bus.png" width="350" alt=""></div>
+    <div class="wheel1"><img src="images/wheel.png" class="wheel" width="35" alt=""></div>
+    <div class="wheel2"><img src="images/wheel.png" class="wheel" width="35" alt=""></div>
+    <div class="road1"></div>
+</div>
+
+<div class="container">
+  <div class="card">
+
+    <!-- 0 歡迎 -->
+    <div class="step active" id="step-0">
+      <span class="hero-emoji"><img src="images/bus1.png" width="180" alt=""></span>
+      <h2 style="text-align:center" data-i18n="welcome_title"></h2>
+      <p class="subtitle" style="text-align:center;margin-top:.5rem" data-i18n="welcome_sub"></p>
+      <p style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:.3rem" data-i18n="organizer"></p>
+      <button class="btn btn-primary" onclick="goStep(1)" data-i18n="start"></button>
+    </div>
+
+    <!-- 1 基本資料 -->
+    <div class="step" id="step-1">
+      <div class="progress-wrap" id="prog-1"></div>
+      <h2 data-i18n="s1_title"></h2>
+      <p class="subtitle" data-i18n="s1_sub"></p>
+      <div class="group"><div class="group-title" data-i18n="q_gender"></div><div class="chips" id="c-gender"></div><input class="other-input" id="o-gender"></div>
+      <div class="group"><div class="group-title" data-i18n="q_age"></div><div class="chips" id="c-age"></div></div>
+      <div class="group"><div class="group-title" data-i18n="q_party"></div><div class="chips" id="c-party"></div></div>
+      <div class="group"><div class="group-title" data-i18n="q_source"></div><div class="chips" id="c-source"></div><input class="other-input" id="o-source"></div>
+      <div class="nav">
+        <button class="btn btn-ghost btn-back" onclick="goStep(0)" data-i18n="back"></button>
+        <button class="btn btn-primary btn-next disabled" id="btn-s1" onclick="goStep(2)" data-i18n="next"></button>
+      </div>
+      <div class="need-hint" id="hint-s1"></div>
+    </div>
+
+    <!-- 2 滿意度 -->
+    <div class="step" id="step-2">
+      <div class="progress-wrap" id="prog-2"></div>
+      <h2 data-i18n="s2_title"></h2>
+      <p class="subtitle" data-i18n="s2_sub"></p>
+      <div id="r-sat"></div>
+      <div class="nav">
+        <button class="btn btn-ghost btn-back" onclick="goStep(1)" data-i18n="back"></button>
+        <button class="btn btn-primary btn-next disabled" id="btn-s2" onclick="goStep(3)" data-i18n="next"></button>
+      </div>
+      <div class="need-hint" id="hint-s2"></div>
+    </div>
+
+    <!-- 3 意願 -->
+    <div class="step" id="step-3">
+      <div class="progress-wrap" id="prog-3"></div>
+      <h2 data-i18n="s3_title"></h2>
+      <p class="subtitle" data-i18n="s3_sub"></p>
+      <div id="r-will"></div>
+      <div class="nav">
+        <button class="btn btn-ghost btn-back" onclick="goStep(2)" data-i18n="back"></button>
+        <button class="btn btn-primary btn-next" onclick="goStep(4)" data-i18n="next"></button>
+      </div>
+    </div>
+
+    <!-- 4 區域（精簡標籤） -->
+    <div class="step" id="step-4">
+      <div class="progress-wrap" id="prog-4"></div>
+      <h2 data-i18n="s4_title"></h2>
+      <p class="subtitle" data-i18n="s4_sub"></p>
+      <div class="chips" id="c-areas"></div>
+      <input class="other-input" id="o-areas">
+      <div class="nav">
+        <button class="btn btn-ghost btn-back" onclick="goStep(3)" data-i18n="back"></button>
+        <button class="btn btn-primary btn-next" onclick="goStep(5)" data-i18n="next"></button>
+      </div>
+    </div>
+
+    <!-- 5 建議 -->
+    <div class="step" id="step-5">
+      <div class="progress-wrap" id="prog-5"></div>
+      <h2 data-i18n="s5_title"></h2>
+      <p class="subtitle" data-i18n="s5_sub"></p>
+      <textarea id="inp-suggest" maxlength="500" data-i18n-ph="s5_ph"></textarea>
+      <div class="counter"><span id="sug-count">0</span> / 500</div>
+      <div class="nav">
+        <button class="btn btn-ghost btn-back" onclick="goStep(4)" data-i18n="back"></button>
+        <button class="btn btn-primary btn-next" onclick="goStep(6)" data-i18n="next"></button>
+      </div>
+    </div>
+
+    <!-- 6 聯絡資料 -->
+    <div class="step" id="step-6">
+      <div class="progress-wrap" id="prog-6"></div>
+      <span class="hero-emoji" style="font-size:3rem;margin:0">🎁</span>
+      <h2 data-i18n="s6_title"></h2>
+      <p class="subtitle" data-i18n="s6_sub"></p>
+      <div class="field">
+        <label><span data-i18n="name_label"></span> <span class="req">*</span></label>
+        <input type="text" id="inp-name" autocomplete="name" data-i18n-ph="name_ph">
+        <div class="error-msg" id="name-err" data-i18n="name_err"></div>
+      </div>
+      <div class="field">
+        <label>Email <span class="req">*</span></label>
+        <input type="email" id="inp-email" autocomplete="email" inputmode="email" data-i18n-ph="email_ph">
+        <div class="error-msg" id="email-err" data-i18n="email_err"></div>
+      </div>
+      <div class="nav">
+        <button class="btn btn-ghost btn-back" onclick="goStep(5)" data-i18n="back"></button>
+        <button class="btn btn-success btn-next" id="btn-submit" onclick="submitForm()" data-i18n="submit"></button>
+      </div>
+    </div>
+
+    <!-- 7 感謝 -->
+    <div class="step" id="step-7">
+      <div class="thanks-anim">
+        <div class="big-icon">🏆</div>
+        <div class="stars">⭐⭐⭐⭐⭐</div>
+        <h2 data-i18n="thanks_title"></h2>
+        <p style="color:var(--primary);font-size:.92rem;font-weight:600;margin-top:.8rem;line-height:1.6" data-i18n="thanks_1"></p>
+        <p style="margin-top:1rem;font-size:.9rem;color:var(--text);line-height:1.6" data-i18n="thanks_2"></p>
+        <p style="margin-top:1.4rem;font-size:.85rem;color:var(--muted)" data-i18n="thanks_3"></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="confetti-wrap" id="confetti-wrap"></div>
+
+<script>
+/* ═════════════ 設定：Google 表單 ═════════════ */
+const FORM_ID = '1FAIpQLScfYgUBHQ9CaNYR7B_T9Rpwe_SWtLc_5XTb64GPitWNiDI1FQ';
+const OTHER = '__other_option__';
+const PAGE_HISTORY = '0,1,2';          // 表單共 3 個區段
+const SAT = ['5★★★★★ 非常滿意 Extremely satisfied','4★★★★ 滿意 Very satisfied','3★★★ 普通 Satisfied','2★★ 不滿意 Very unsatisfied','1★ 非常不滿意 Extremely unsatisfied'];
+const satVal = n => SAT[5 - n];
+const numVal = n => String(n);
+const L = (zh, en) => ({ zh, en });
+
+/* ═════════════ 介面文字（中／英） ═════════════ */
+const UI = {
+  title:        L('🚌 自駕巴士搭乘體驗問卷', '🚌 Autonomous Bus Ride Survey'),
+  welcome_title:L('感謝您搭乘<br>臺中水湳自駕巴士！', 'Thanks for riding the<br>Taichung Shuinan Autonomous Bus!'),
+  welcome_sub:  L('花 2 分鐘分享這趟搭乘的感受<br>再留下 Email，就有機會抽中精美小禮品！', 'Share your ride experience in 2 minutes,<br>leave your email and you could win a small gift!'),
+  organizer:    L('臺中市政府交通局主辦・勤崴國際執行', 'Organized by Taichung City Government Transportation Bureau · Executed by Kingwaytek'),
+  start:        L('開始填寫 🚀', 'Start 🚀'),
+  back:         L('← 上一步', '← Back'),
+  next:         L('下一步 →', 'Next →'),
+  submit:       L('送出 🎉', 'Submit 🎉'),
+  s1_title:     L('先認識一下您 👋', 'A little about you 👋'),
+  s1_sub:       L('以下皆為必填', 'All fields below are required'),
+  q_gender:     L('性別', 'Gender'),
+  q_age:        L('年齡', 'Age'),
+  q_party:      L('同行人數（含您本人）', 'Number of people in your group (including you)'),
+  q_source:     L('請問您如何得知這次試乘活動？', 'How did you hear about this test-ride event?'),
+  s2_title:     L('搭乘後的滿意度 ⭐', 'Your ride satisfaction ⭐'),
+  s2_sub:       L('點星星評分，全部必填', 'Tap the stars to rate — all required'),
+  s3_title:     L('對自駕巴士的看法 💭', 'Your view on autonomous buses 💭'),
+  s3_sub:       L('選填，1 星最低、5 星最高', 'Optional · 1 star = lowest, 5 stars = highest'),
+  s4_title:     L('哪裡最適合自駕車？ 🗺️', 'Where suits autonomous vehicles best? 🗺️'),
+  s4_sub:       L('可多選（選填）', 'Select any that apply (optional)'),
+  s5_title:     L('給我們的建議 ✍️', 'Your suggestions ✍️'),
+  s5_sub:       L('對本次接駁服務有任何想法都歡迎告訴我們（選填）', 'Anything we can improve about this shuttle service? (optional)'),
+  s5_ph:        L('例如：站牌指引可以更明顯、班次再多一點…', 'e.g. clearer stop signage, more frequent service…'),
+  s6_title:     L('留下您的資料', 'Your contact details'),
+  s6_sub:       L('團隊將於營運結束後抽出幸運者，贈送精美小禮品！', 'Lucky winners will be drawn after the operation ends and receive a small souvenir!'),
+  name_label:   L('該怎麼稱呼您？', 'How should we address you?'),
+  name_ph:      L('請輸入姓名或暱稱', 'Your name or nickname'),
+  name_err:     L('請輸入稱呼', 'Please enter a name'),
+  email_ph:     L('請輸入 Email', 'Your email address'),
+  email_err:    L('請輸入有效的 Email 地址', 'Please enter a valid email address'),
+  other_ph:     L('請說明（選填）', 'Please specify (optional)'),
+  hint_s1:      L('請完成所有必填項目', 'Please complete all required fields'),
+  hint_s2:      L('請為每一項評分', 'Please rate every item'),
+  thanks_title: L('感謝您的搭乘與回饋！', 'Thank you for riding and for your feedback!'),
+  thanks_1:     L('營運結束後將抽出幸運者<br>以 Email 通知您 📧', 'Winners will be drawn after the operation ends<br>and notified by email 📧'),
+  thanks_2:     L('您的寶貴意見，將成為我們日後進步的動力。', 'Your valuable feedback drives our future improvements.'),
+  thanks_3:     L('期待下次再與您同行 🚌💨', 'We look forward to riding with you again 🚌💨'),
+};
+
+/* ═════════════ 題目設定 ═════════════
+   label：畫面顯示（中英）；value：送進 Google 表單的值（與表單選項完全一致）*/
+const SINGLE = {
+  gender: { entry:'78719293', other:true, opts:[
+    { label:L('男','Male'),   value:'男 Male' },
+    { label:L('女','Female'), value:'女 Female' },
+    { label:L('其他','Other'),value:OTHER } ] },
+  age: { entry:'1592563255', opts:['11~20','21~30','31~40','41~50','51~60','61~70','71~80'].map(v => ({ label:L(v,v), value:v }))
+          .concat([{ label:L('81以上','81+'), value:'81以上' }]) },
+  party: { entry:'351731575', opts:[
+    { label:L('1（僅自己）','1 (just me)'), value:'1' },
+    ...['2','3','4','5','6','7','8'].map(v => ({ label:L(v,v), value:v })),
+    { label:L('9人以上','9 or more'), value:'9' } ] },
+  source: { entry:'706142252', other:true, opts:[
+    { label:L('社群媒體（FB、IG、Threads…）','Social media (FB, IG, Threads…)'), value:'社群媒體（FB、IG、Threads等）' },
+    { label:L('親友介紹','Friends or family'), value:'親友介紹 Friends or family' },
+    { label:L('新聞媒體','News & media'),       value:'新聞媒體 News&media' },
+    { label:L('路過看到','Just passing by'),    value:'路過看到 Just passing by' },
+    { label:L('其他','Other'),                  value:OTHER } ] },
+};
+
+const SAT_CAPS = L(['非常不滿意','不滿意','普通','滿意','非常滿意'], ['Very dissatisfied','Dissatisfied','Neutral','Satisfied','Very satisfied']);
+const WILL_CAPS = L(['非常不願意','不太願意','普通','願意','非常願意'], ['Very unwilling','Unwilling','Neutral','Willing','Very willing']);
+const AGREE_CAPS = L(['非常不贊成','不太贊成','普通','贊成','非常贊成'], ['Strongly disagree','Disagree','Neutral','Agree','Strongly agree']);
+const RATINGS = {
+  sat: [
+    { key:'overall', entry:'1214593249', val:satVal, caps:SAT_CAPS, required:true, title:L('接駁服務整體滿意度','Overall shuttle service') },
+    { key:'site',    entry:'1087574351', val:satVal, caps:SAT_CAPS, required:true, title:L('站點位置滿意度','Stop locations') },
+    { key:'guide',   entry:'1383750273', val:satVal, caps:SAT_CAPS, required:true, title:L('上車引導滿意度','Boarding guidance') },
+    { key:'route',   entry:'1975739514', val:satVal, caps:SAT_CAPS, required:true, title:L('路線設計滿意度','Route design') },
+    { key:'ride',    entry:'779593871',  val:satVal, caps:SAT_CAPS, required:true, title:L('自駕行駛乘適性體驗','Autonomous driving ride comfort') },
+  ],
+  will: [
+    { key:'recommend', entry:'725185824',  val:numVal, caps:WILL_CAPS,  ends:L(['非常不願意','非常願意'],['Very unwilling','Very willing']), title:L('願意推薦他人搭乘自駕巴士嗎？','Would you recommend autonomous buses to others?') },
+    { key:'again',     entry:'1075591379', val:numVal, caps:WILL_CAPS,  ends:L(['非常不願意','非常願意'],['Very unwilling','Very willing']), title:L('正式營運後，您願意再次搭乘嗎？','Would you ride again once it is in regular service?') },
+    { key:'join',      entry:'316657203',  val:numVal, caps:WILL_CAPS,  ends:L(['非常不願意','非常願意'],['Very unwilling','Very willing']), title:L('未來願意主動參與其他自駕車活動嗎？','Would you join other autonomous vehicle events?') },
+    { key:'approve',   entry:'858819533',  val:numVal, caps:AGREE_CAPS, ends:L(['非常不贊成','非常贊成'],['Strongly disagree','Strongly agree']), title:L('是否贊成將自駕巴士納入未來大眾運輸？','Do you support including autonomous buses in future public transport?') },
+  ],
+};
+
+// 區域：short＝精簡標籤；value＝完整的表單選項
+const AREAS_ENTRY = '1705643853';
+const AREAS = [
+  { icon:'🏙️', short:L('水湳','Shuinan'),                value:'水湳經貿園區 Shuinan Economic & Trade Park' },
+  { icon:'🛣️', short:L('七期・台灣大道','Qiqi'),          value:'七期、台灣大道沿線 Qiqi / Taiwan Blvd. area' },
+  { icon:'🛍️', short:L('逢甲・中科','Fengjia'),           value:'逢甲、中科商圈 Fengjia / Central Taiwan Science Park' },
+  { icon:'⛰️', short:L('北屯・大坑','Beitun'),            value:'北屯、大坑 Beitun / Dakeng' },
+  { icon:'🏘️', short:L('南屯・精科','Nantun'),            value:'南屯、精科、老松 Nantun / Jingke / Laosong' },
+  { icon:'🏮', short:L('舊市區','Old downtown'),          value:'舊市區（中、東、西、南、北區）Old downtown' },
+  { icon:'🚄', short:L('烏日・高鐵','Wuri / HSR'),        value:'烏日（高鐵台中站周邊）Wuri / HSR Taichung Station' },
+  { icon:'🌾', short:L('大里・太平・霧峰','Dali / Taiping'),value:'大里、太平、霧峰 Dali / Taiping / Wufeng' },
+  { icon:'🏭', short:L('豐原・潭子','Fengyuan'),          value:'豐原、潭子、神岡、大雅 Fengyuan / Tanzi / Shengang / Daya' },
+  { icon:'🌊', short:L('沿海','Coastal'),                 value:'沿海區域 Coastal areas' },
+  { icon:'🏞️', short:L('山城・觀光區','Mountain'),        value:'山城／觀光區 Mountain / tourism areas' },
+  { icon:'📍', short:L('其他','Other'),                   value:OTHER },
+];
+
+/* ═════════════ 狀態 ═════════════ */
+const answers = {};    // 單選 key → value
+const ratings = {};    // 星等 key → 1~5
+const areas = [];      // 區域多選 value
+const otherText = {};  // 「其他」補充文字：gender / source / areas
+const LAST_FORM_STEP = 6;
+let lang = 'zh';
+let currentStep = 0;
+let submitting = false;
+
+const $ = id => document.getElementById(id);
+const tr = obj => obj[lang];
+
+/* ═════════════ 語言 ═════════════ */
+function initLang() {
+  let saved = null;
+  try { saved = localStorage.getItem('survey_lang'); } catch (e) {}
+  lang = saved === 'en' || saved === 'zh' ? saved : ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en');
+}
+function setLang(l) {
+  lang = l;
+  try { localStorage.setItem('survey_lang', l); } catch (e) {}
+  applyLang();
+}
+function applyLang() {
+  document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+  document.title = tr(UI.title);
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = tr(UI[el.dataset.i18n]); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = tr(UI[el.dataset.i18nPh]); });
+  document.querySelectorAll('.other-input').forEach(el => { el.placeholder = tr(UI.other_ph); });
+  $('lang-zh').classList.toggle('on', lang === 'zh');
+  $('lang-en').classList.toggle('on', lang === 'en');
+  renderChips(); renderRatings(); renderAreas();
+  buildProgress(currentStep);
+  checkStep1(); checkStep2();
+}
+
+/* ═════════════ 步驟切換 ═════════════ */
+function buildProgress(n) {
+  const wrap = $('prog-' + n);
+  if (!wrap) return;
+  const label = lang === 'zh' ? `第 ${n} 步，共 ${LAST_FORM_STEP} 步` : `Step ${n} of ${LAST_FORM_STEP}`;
+  wrap.innerHTML = '<div style="display:flex;gap:6px;width:100%" role="progressbar" aria-valuemin="1" aria-valuemax="' + LAST_FORM_STEP + '" aria-valuenow="' + n + '" aria-label="' + label + '"></div>';
+  const bar = wrap.firstChild;
+  for (let i = 1; i <= LAST_FORM_STEP; i++) {
+    const d = document.createElement('div');
+    d.className = 'progress-dot' + (i <= n ? ' done' : '');
+    bar.appendChild(d);
+  }
+  const meta = document.createElement('div');
+  meta.style.cssText = 'text-align:right;font-size:.72rem;color:var(--muted);margin-top:.35rem';
+  meta.textContent = n + ' / ' + LAST_FORM_STEP;
+  wrap.appendChild(meta);
+}
+function goStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  $('step-' + n).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  buildProgress(n);
+}
+function setReady(btnId, hintId, ok, hintKey) {
+  $(btnId).classList.toggle('disabled', !ok);
+  $(btnId).setAttribute('aria-disabled', String(!ok));
+  $(hintId).textContent = ok ? '' : tr(UI[hintKey]);
+}
+function checkStep1() { setReady('btn-s1', 'hint-s1', Object.keys(SINGLE).every(k => answers[k] !== undefined), 'hint_s1'); }
+function checkStep2() { setReady('btn-s2', 'hint-s2', RATINGS.sat.every(r => ratings[r.key]), 'hint_s2'); }
+
+/* ═════════════ 「其他」補充輸入 ═════════════ */
+function bindOther(key, inputId, visible) {
+  const inp = $(inputId);
+  inp.classList.toggle('show', visible);
+  inp.value = otherText[key] || '';
+  inp.oninput = () => { otherText[key] = inp.value.trim(); };
+}
+
+/* ═════════════ 渲染：單選標籤 ═════════════ */
+function renderChips() {
+  Object.entries(SINGLE).forEach(([key, cfg]) => {
+    const box = $('c-' + key);
+    box.innerHTML = '';
+    box.setAttribute('role', 'radiogroup');
+    cfg.opts.forEach(o => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'chip' + (answers[key] === o.value ? ' selected' : '');
+      el.textContent = tr(o.label);
+      el.setAttribute('role', 'radio');
+      el.setAttribute('aria-checked', String(answers[key] === o.value));
+      el.onclick = () => {
+        answers[key] = o.value;
+        box.querySelectorAll('.chip').forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-checked', 'false'); });
+        el.classList.add('selected'); el.setAttribute('aria-checked', 'true');
+        if (cfg.other) bindOther(key, 'o-' + key, o.value === OTHER);
+        checkStep1();
+      };
+      box.appendChild(el);
+    });
+    if (cfg.other) bindOther(key, 'o-' + key, answers[key] === OTHER);
+  });
+}
+
+/* ═════════════ 渲染：星等 ═════════════ */
+function paintStars(row, r) {
+  const n = ratings[r.key] || 0;
+  row.querySelectorAll('.star-btn').forEach((s, i) => { s.classList.toggle('on', i < n); s.setAttribute('aria-checked', String(i + 1 === n)); });
+  row.querySelector('.rate-cap').textContent = n ? n + (lang === 'zh' ? ' 星・' : ' ★ · ') + tr(r.caps)[n - 1] : '';
+}
+function renderRatings() {
+  Object.entries(RATINGS).forEach(([group, list]) => {
+    const box = $('r-' + group);
+    box.innerHTML = '';
+    list.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'rate-row';
+      row.innerHTML = `<div class="group-title">${tr(r.title)}${r.required ? ' <span class="req">*</span>' : ''}</div>
+        <div class="stars-row" role="radiogroup" aria-label="${tr(r.title)}"></div>
+        ${r.ends ? `<div class="rate-ends"><span>${tr(r.ends)[0]}</span><span>${tr(r.ends)[1]}</span></div>` : ''}
+        <div class="rate-cap" aria-live="polite"></div>`;
+      const starsEl = row.querySelector('.stars-row');
+      for (let n = 1; n <= 5; n++) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'star-btn';
+        b.textContent = '★';
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-label', n + ' ★ ' + tr(r.caps)[n - 1]);
+        b.onclick = () => { ratings[r.key] = n; paintStars(row, r); checkStep2(); };
+        starsEl.appendChild(b);
+      }
+      paintStars(row, r);
+      box.appendChild(row);
+    });
+  });
+}
+
+/* ═════════════ 渲染：區域（精簡標籤、多選） ═════════════ */
+function renderAreas() {
+  const box = $('c-areas');
+  box.innerHTML = '';
+  AREAS.forEach(a => {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'chip' + (areas.includes(a.value) ? ' selected' : '');
+    el.textContent = a.icon + ' ' + tr(a.short);
+    el.title = a.value === OTHER ? '' : a.value;
+    el.setAttribute('aria-pressed', String(areas.includes(a.value)));
+    el.onclick = () => {
+      const i = areas.indexOf(a.value);
+      if (i === -1) areas.push(a.value); else areas.splice(i, 1);
+      el.classList.toggle('selected', i === -1);
+      el.setAttribute('aria-pressed', String(i === -1));
+      if (a.value === OTHER) bindOther('areas', 'o-areas', i === -1);
+    };
+    box.appendChild(el);
+  });
+  bindOther('areas', 'o-areas', areas.includes(OTHER));
+}
+
+/* ═════════════ 送出 ═════════════ */
+function submitForm() {
+  if (submitting) return;
+  const name = $('inp-name').value.trim();
+  const email = $('inp-email').value.trim();
+  const nameOk = !!name;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  $('name-err').style.display = nameOk ? 'none' : 'block';
+  $('email-err').style.display = emailOk ? 'none' : 'block';
+  $('inp-name').classList.toggle('invalid', !nameOk);
+  $('inp-email').classList.toggle('invalid', !emailOk);
+  if (!nameOk || !emailOk) return;
+
+  submitting = true;
+  $('btn-submit').classList.add('disabled');
+
+  const data = new FormData();
+  data.append('pageHistory', PAGE_HISTORY);
+  const put = (entry, value, otherKey) => {
+    if (value === OTHER) {
+      data.append('entry.' + entry, OTHER);
+      data.append('entry.' + entry + '.other_option_response', otherText[otherKey] || '其他');
+    } else {
+      data.append('entry.' + entry, value);
+    }
+  };
+  Object.entries(SINGLE).forEach(([key, cfg]) => put(cfg.entry, answers[key], key));
+  Object.values(RATINGS).flat().forEach(r => { if (ratings[r.key]) put(r.entry, r.val(ratings[r.key])); });
+  areas.forEach(v => put(AREAS_ENTRY, v, 'areas'));
+  data.append('entry.140891989', $('inp-suggest').value.replace(/\s*[\r\n]+\s*/g, ' ').trim());  // 表單此題為「簡答」，不可換行
+  data.append('entry.492669153', name);
+  data.append('entry.393527031', email);
+
+  fetch(`https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`, { method: 'POST', mode: 'no-cors', body: data }).catch(() => {});
+
+  goStep(7);
+  launchConfetti();
+}
+
+/* ═════════════ Confetti ═════════════ */
+function launchConfetti() {
+  const wrap = $('confetti-wrap');
+  const colors = ['#2196f3','#ff9800','#4caf50','#e91e63','#9c27b0','#ffeb3b'];
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetto';
+    c.style.cssText = `
+      left: ${Math.random()*100}vw;
+      top: -10px;
+      background: ${colors[Math.floor(Math.random()*colors.length)]};
+      width: ${6+Math.random()*8}px;
+      height: ${6+Math.random()*8}px;
+      animation-duration: ${1.5+Math.random()*2}s;
+      animation-delay: ${Math.random()*0.8}s;
+    `;
+    wrap.appendChild(c);
+    setTimeout(() => c.remove(), 4000);
+  }
+}
+
+/* ═════════════ 初始化 ═════════════ */
+$('inp-suggest').addEventListener('input', e => { $('sug-count').textContent = e.target.value.length; });
+initLang();
+applyLang();
+</script>
+</body>
+</html>
